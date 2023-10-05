@@ -1,6 +1,6 @@
 #include "MyLibraries.h"
 
-int get_attacked_pieces_value(chessboard& BOARD, uint64_t attacked, bool white_attacking) {
+int get_attacked_pieces_value(chessboard& BOARD, uint64_t& attacked, bool white_attacking) {
     int temp_nr, return_value = 0;
     if (white_attacking) {
         while (attacked != 0) {
@@ -26,7 +26,7 @@ int get_attacked_pieces_value(chessboard& BOARD, uint64_t attacked, bool white_a
     }
     return return_value;
 }
-int get_xray_attacks(chessboard& BOARD, uint64_t attack_rays, bool white, char piece, int square) {
+int get_xray_attacks(chessboard& BOARD, uint64_t& attack_rays, bool white, char piece, int square) {
     uint64_t all_piece_occupancy = get_occupancy(BOARD), attacked_opponent_pieces;
     int power = 1, returnvalue = 0;
     if (white) {
@@ -229,7 +229,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_bishop_attacks(temp_nr, empty_board), true, 'b', temp_nr);
+                temp_something = get_bishop_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, true, 'b', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -252,7 +253,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_rook_attacks(temp_nr, empty_board), true, 'r', temp_nr);
+                temp_something = get_rook_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, true, 'r', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -276,7 +278,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_queen_attacks(temp_nr, empty_board), true, 'q', temp_nr);
+                temp_something = get_queen_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, true, 'q', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -368,8 +371,10 @@ int EVAL(chessboard& BOARD, int depth) {
     }
     //control and defense
     if (ERoMoE > -1) {
-        eval += get_attacked_pieces_value(BOARD, (control & black_occupancy), true);
-        eval += 0.5 * get_attacked_pieces_value(BOARD, (control & white_occupancy), true);
+        temp_something = control & black_occupancy;
+        eval += get_attacked_pieces_value(BOARD, temp_something, true);
+        temp_something = control & white_occupancy;
+        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, true);
         if ((temp_n = Count_bits_no_ref(~control & white_occupancy)) != 0) {
             if (temp_n < 3)eval += temp_n * -5;
             else eval += temp_n * -7;
@@ -489,7 +494,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_bishop_attacks(temp_nr, empty_board), false, 'b', temp_nr);
+                temp_something = get_rook_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, false, 'b', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -512,7 +518,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_rook_attacks(temp_nr, empty_board), false, 'r', temp_nr);
+                temp_something = get_rook_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, false, 'r', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -536,7 +543,8 @@ int EVAL(chessboard& BOARD, int depth) {
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.56 * temp_control_square_worth
                     + Count_bits_no_ref(temp_something & level_3_square) * 1.95 * temp_control_square_worth;
                 eval += Count_bits_no_ref(temp_something & get_king_attacks(temp_nr)) * 3;
-                eval += get_xray_attacks(BOARD, get_queen_attacks(temp_nr, empty_board), false, 'q', temp_nr);
+                temp_something = get_queen_attacks(temp_nr, empty_board);
+                eval += get_xray_attacks(BOARD, temp_something, false, 'q', temp_nr);
             }
             pop_bit(temp_pieces, temp_nr);
         }
@@ -629,8 +637,10 @@ int EVAL(chessboard& BOARD, int depth) {
     }
     //control and defense
     if (ERoMoE > -1) {
-        eval += get_attacked_pieces_value(BOARD, (control & white_occupancy), false);
-        eval += 0.5 * get_attacked_pieces_value(BOARD, (control & black_occupancy), false);
+        temp_something = control & white_occupancy;
+        eval += get_attacked_pieces_value(BOARD, temp_something, false);
+        temp_something = control & black_occupancy;
+        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, false);
         if ((temp_n = Count_bits_no_ref(~control & black_occupancy)) != 0) {
             if (temp_n < 3)eval += temp_n * -5;
             else eval += temp_n * -7;
@@ -652,6 +662,6 @@ int EVAL(chessboard& BOARD, int depth) {
     return finalEval;
 }
 
-int moveValue() {
+int moveValue(MOVE& move, bool white) {
 
 }
