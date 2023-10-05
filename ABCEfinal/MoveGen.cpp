@@ -115,7 +115,17 @@ uint64_t random_U64()
 uint64_t random_fewbits() {
     return random_U64() & random_U64() & random_U64();
 }
-int Count_bits(uint64_t bitboard) {
+int Count_bits(uint64_t& bitboard) {
+    //Hamming weight algorithm or something
+    bitboard = bitboard - ((bitboard >> 1) & 0x5555555555555555ULL);
+    bitboard = (bitboard & 0x3333333333333333ULL) + ((bitboard >> 2) & 0x3333333333333333ULL);
+    bitboard = (bitboard + (bitboard >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
+    bitboard = bitboard + (bitboard >> 8);
+    bitboard = bitboard + (bitboard >> 16);
+    bitboard = bitboard + (bitboard >> 32);
+    return static_cast<int>(bitboard & 0x7f);
+}
+int Count_bits_no_ref(uint64_t bitboard) {
     //Hamming weight algorithm or something
     bitboard = bitboard - ((bitboard >> 1) & 0x5555555555555555ULL);
     bitboard = (bitboard & 0x3333333333333333ULL) + ((bitboard >> 2) & 0x3333333333333333ULL);
@@ -130,7 +140,7 @@ int get_ls1b_index(unsigned long long bitboard) {
     // make sure bitboard is not empty
     if (bitboard != 0)
         // convert trailing zeros before LS1B to ones and count them
-        return Count_bits((bitboard & (-1 * bitboard)) - 1);
+        return Count_bits_no_ref((bitboard & (-1 * bitboard)) - 1);
 
     // otherwise
     else
@@ -315,7 +325,7 @@ uint64_t find_magic(int square, int relevant_bits, int bishop) {
         uint64_t magic = random_fewbits();
 
         // skip testing magic number if inappropriate
-        if (Count_bits((mask_attack * magic) & 0xFF00000000000000ULL) < 6) continue;
+        if (Count_bits_no_ref((mask_attack * magic) & 0xFF00000000000000ULL) < 6) continue;
 
         // reset used attacks array
         memset(used_attacks, 0ULL, sizeof(used_attacks));
@@ -450,7 +460,7 @@ void init_sliders_attacks(int is_bishop)
         uint64_t mask = is_bishop ? mask_bishop_attacks(square) : mask_rook_attacks(square);
 
         // count attack mask bits
-        int bit_count = Count_bits(mask);
+        int bit_count = Count_bits_no_ref(mask);
 
         // occupancy variations count
         int occupancy_variations = 1 << bit_count;
@@ -478,7 +488,7 @@ void init_sliders_attacks(int is_bishop)
         }
     }
 }
-uint64_t get_bishop_attacks(int square, uint64_t occupancy) {
+uint64_t get_bishop_attacks(int square, uint64_t& occupancy) {
     // calculate magic index
     occupancy &= bishop_masks[square];
     occupancy *= bishop_magics[square];
@@ -488,7 +498,7 @@ uint64_t get_bishop_attacks(int square, uint64_t occupancy) {
     return bishop_attacks[square][occupancy];
 
 }
-uint64_t get_rook_attacks(int square, uint64_t occupancy) {
+uint64_t get_rook_attacks(int square, uint64_t& occupancy) {
 
     // calculate magic index
     occupancy &= rook_masks[square];
@@ -633,7 +643,7 @@ std::vector<std::string> split(const std::string line, char split_symbol) {
     if (word[word.length() - 1] != split_symbol && word != "")words.push_back(word);
     return words;
 }
-bool are_chessboards_equal(chessboard a, chessboard b) {
+bool are_chessboards_equal(chessboard& a, chessboard& b) {
     return a.white.bishops == b.white.bishops && a.white.pawns == b.white.pawns && a.white.knights == b.white.knights && a.white.king == b.white.king &&
         a.white.queen == b.white.queen && a.white.rooks == b.white.rooks && a.castling == b.castling &&
         a.black.bishops == b.black.bishops && a.black.pawns == b.black.pawns && a.black.knights == b.black.knights && a.black.king == b.black.king &&
@@ -647,7 +657,7 @@ bool are_chessboards_equal1(chessboard a, chessboard b) {
 }
 
 
-uint64_t get_pawn_moves_and_attacks(uint64_t occupancy, int square, bool is_white, uint64_t opponent_occupancy) {
+uint64_t get_pawn_moves_and_attacks(uint64_t& occupancy, int square, bool is_white, uint64_t& opponent_occupancy) {
     uint64_t pawn_moves = 0, pawn = 0;
     set_bit(pawn, square);
     if (is_white) {
@@ -664,7 +674,7 @@ uint64_t get_pawn_moves_and_attacks(uint64_t occupancy, int square, bool is_whit
     }
     return pawn_moves;
 }
-uint64_t getPawnMoves(uint64_t occupancy, int square, bool is_white) {
+uint64_t getPawnMoves(uint64_t& occupancy, int square, bool is_white) {
     uint64_t pawn_moves = 0, pawn = 0;
     set_bit(pawn, square);
     if (is_white) {
@@ -690,7 +700,7 @@ uint64_t get_pawn_attacks(int square, bool white) {
     }
     return pawn_attacks;
 }
-uint64_t get_all_pawn_attacks(uint64_t pawns, bool is_white) {
+uint64_t get_all_pawn_attacks(uint64_t& pawns, bool is_white) {
     uint64_t pawn_attacks = 0;
     if (is_white) {
         pawn_attacks = ((pawns & ~trim_left) << BOARD_WIDTH + 1);
@@ -702,7 +712,7 @@ uint64_t get_all_pawn_attacks(uint64_t pawns, bool is_white) {
     }
     return pawn_attacks;
 }
-uint64_t get_all_pawn_moves(uint64_t pawns, uint64_t occupancy, bool white) {
+uint64_t get_all_pawn_moves(uint64_t& pawns, uint64_t& occupancy, bool white) {
     uint64_t pawn_moves = 0;
     if (white) {
         pawn_moves = (~occupancy & (pawns << BOARD_WIDTH));//move one forward
@@ -720,14 +730,20 @@ uint64_t get_knight_attacks(int square) {
 uint64_t get_king_attacks(int square) {
     return king_magics[square];
 }
-uint64_t get_occupancy(bitboards a) {
+uint64_t get_occupancy(bitboards& a) {
     return a.pawns | a.knights | a.bishops | a.king | a.queen | a.rooks;
 }
-uint64_t get_occupancy(chessboard a) {
+uint64_t get_occupancy(chessboard& a) {
     return get_occupancy(a.black) | get_occupancy(a.white);
 }
+void getKingRays(chessboard& BOARD, bool white, uint64_t& rays, int& kingsquare, uint64_t& all_occupancy) {
+    rays = get_bishop_attacks(kingsquare, all_occupancy);
+    rays |= get_rook_attacks(kingsquare, all_occupancy);
+    rays |= get_knight_attacks(kingsquare);
+    rays |= get_king_attacks(kingsquare);
+}
 
-void move_piece(bitboards& a, MOVE move) {
+void move_piece(bitboards& a, MOVE& move) {
     if (get_bit(a.pawns, move.from)) {
         pop_bit(a.pawns, move.from);
         set_bit(a.pawns, move.to);
@@ -754,18 +770,19 @@ void move_piece(bitboards& a, MOVE move) {
     }
 }
 
-uint64_t get_queen_attacks(int square, uint64_t occupancy) {
+uint64_t get_queen_attacks(int square, uint64_t& occupancy) {
     return get_rook_attacks(square, occupancy) | get_bishop_attacks(square, occupancy);
 }
 
-unsigned int find_first_set_bit(uint64_t x)
+
+static const int debruijn64[64] = {
+    0, 1, 48, 2, 57, 49, 28, 3, 61, 58, 50, 42, 38, 29, 17, 4,
+    62, 55, 59, 36, 53, 51, 43, 22, 45, 39, 33, 30, 24, 18, 12, 5,
+    63, 47, 56, 27, 60, 41, 37, 16, 54, 35, 52, 21, 44, 32, 23, 11,
+    46, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6
+};
+unsigned int find_first_set_bit(uint64_t& x)
 {
-    static const int debruijn64[64] = {
-        0, 1, 48, 2, 57, 49, 28, 3, 61, 58, 50, 42, 38, 29, 17, 4,
-        62, 55, 59, 36, 53, 51, 43, 22, 45, 39, 33, 30, 24, 18, 12, 5,
-        63, 47, 56, 27, 60, 41, 37, 16, 54, 35, 52, 21, 44, 32, 23, 11,
-        46, 26, 40, 15, 34, 20, 31, 10, 25, 14, 19, 9, 13, 8, 7, 6
-    };
     return debruijn64[((uint64_t)((x & (-1 * x)) * 0x03f79d71b4cb0a89)) >> 58];
 }
 
@@ -1406,23 +1423,21 @@ void generateAllMoves(chessboard& BOARD, bool White, MOVES& moves) {
     generateMoves(BOARD, White, moves);
 }
 bool king_in_check(chessboard& BOARD, bool white) {
-    int kingsquare;
+    int kingsquare = find_first_set_bit(getKing(BOARD, white));
     uint64_t temp_attack, all_occupancy = get_occupancy(BOARD);
-    if (white) {
-        kingsquare = find_first_set_bit(BOARD.white.king);
-        if ((((temp_attack = get_bishop_attacks(kingsquare, all_occupancy)) & BOARD.black.bishops) != 0) || ((temp_attack & BOARD.black.queen) != 0))return true;
-        if ((((temp_attack = get_rook_attacks(kingsquare, all_occupancy)) & BOARD.black.rooks) != 0) || ((temp_attack & BOARD.black.queen) != 0))return true;
-        if ((get_knight_attacks(kingsquare) & BOARD.black.knights) != 0)return true;
-        if ((get_king_attacks(kingsquare) & BOARD.black.king) != 0)return true;
-        if (((((BOARD.white.king & ~trim_left) << (BOARD_WIDTH + 1)) & BOARD.black.pawns) != 0) || ((((BOARD.white.king & ~trim_right) << (BOARD_WIDTH - 1)) & BOARD.black.pawns) != 0)) return true;
-    }
-    else {
-        kingsquare = find_first_set_bit(BOARD.black.king);
-        if ((((temp_attack = get_bishop_attacks(kingsquare, all_occupancy)) & BOARD.white.bishops) != 0) || ((temp_attack & BOARD.white.queen) != 0))return true;
-        if ((((temp_attack = get_rook_attacks(kingsquare, all_occupancy)) & BOARD.white.rooks) != 0) || ((temp_attack & BOARD.white.queen) != 0))return true;
-        if ((get_knight_attacks(kingsquare) & BOARD.white.knights) != 0)return true;
-        if ((get_king_attacks(kingsquare) & BOARD.white.king) != 0)return true;
-        if (((((BOARD.black.king & ~trim_left) >> (BOARD_WIDTH - 1)) & BOARD.white.pawns) != 0) || ((((BOARD.black.king & ~trim_right) >> (BOARD_WIDTH + 1)) & BOARD.white.pawns) != 0)) return true;
-    }
+    getKingRays(BOARD, white, temp_attack, kingsquare, all_occupancy);
+    if ((temp_attack & get_occupancy(getColour(BOARD, !white))) == 0)return false;
+
+    if ((((temp_attack = get_bishop_attacks(kingsquare, all_occupancy)) & getBishop(BOARD, !white)) != 0) || ((temp_attack & getQueen(BOARD, !white)) != 0))return true;
+    if ((((temp_attack = get_rook_attacks(kingsquare, all_occupancy)) & getRook(BOARD, !white)) != 0) || ((temp_attack & getQueen(BOARD, !white)) != 0))return true;
+    if ((get_knight_attacks(kingsquare) & getKnight(BOARD, !white)) != 0)return true;
+    if ((get_king_attacks(kingsquare) & getKing(BOARD, !white)) != 0)return true;
+    if (white) 
+        if (((((BOARD.white.king & ~trim_left) << (BOARD_WIDTH + 1)) & BOARD.black.pawns) != 0)
+            || ((((BOARD.white.king & ~trim_right) << (BOARD_WIDTH - 1)) & BOARD.black.pawns) != 0)) return true;
+    else
+        if (((((BOARD.black.king & ~trim_left) >> (BOARD_WIDTH - 1)) & BOARD.white.pawns) != 0) 
+            || ((((BOARD.black.king & ~trim_right) >> (BOARD_WIDTH + 1)) & BOARD.white.pawns) != 0)) return true;
+
     return false;
 }

@@ -1,43 +1,44 @@
 #pragma once
 #include "ClassesAndStructs.h"
 chessboard initialize_chessboard(std::string FenCode, bool& White, int& time);
-bool are_chessboards_equal(chessboard a, chessboard b);
+bool are_chessboards_equal(chessboard& a, chessboard& b);
 
 std::vector<std::string> split(const std::string line, char split_symbol);
 
 bool MOVES_EMPTY(MOVES& moves);
 int MOVE_COUNT(MOVES& moves);
 
-void move_piece(bitboards& a, MOVE move);
+void move_piece(bitboards& a, MOVE& move);
 
 #define get_bit(bitboard, square) (bitboard & (1ULL << (square)))
 #define set_bit(bitboard, square) (bitboard |= ((1ULL) << (square)))
 #define pop_bit(bitboard, square) (get_bit(bitboard, square) ? (bitboard ^= (1ULL << (square))) : 0)
 
-uint64_t get_occupancy(chessboard a);
-uint64_t get_occupancy(bitboards a);
+uint64_t get_occupancy(chessboard& a);
+uint64_t get_occupancy(bitboards& a);
 
-uint64_t get_queen_attacks(int square, uint64_t occupancy);
+uint64_t get_queen_attacks(int square, uint64_t& occupancy);
 
-uint64_t get_pawn_moves_and_attacks(uint64_t occupancy, int square, bool is_white, uint64_t opponent_occupancy);
-uint64_t getPawnMoves(uint64_t occupancy, int square, bool is_white);
+uint64_t get_pawn_moves_and_attacks(uint64_t& occupancy, int square, bool is_white, uint64_t& opponent_occupancy);
+uint64_t getPawnMoves(uint64_t& occupancy, int square, bool is_white);
 uint64_t get_pawn_attacks(int square, bool white);
-uint64_t get_all_pawn_attacks(uint64_t pawns, bool is_white);
-uint64_t get_all_pawn_moves(uint64_t pawns, uint64_t occupancy, bool white);
+uint64_t get_all_pawn_attacks(uint64_t& pawns, bool is_white);
+uint64_t get_all_pawn_moves(uint64_t& pawns, uint64_t& occupancy, bool white);
 uint64_t get_knight_attacks(int square);
 uint64_t get_king_attacks(int square);
-uint64_t get_occupancy(bitboards a);
-uint64_t get_occupancy(chessboard a);
-uint64_t get_bishop_attacks(int square, uint64_t occupancy);
-uint64_t get_rook_attacks(int square, uint64_t occupancy);
+uint64_t get_occupancy(bitboards& a);
+uint64_t get_occupancy(chessboard& a);
+uint64_t get_bishop_attacks(int square, uint64_t& occupancy);
+uint64_t get_rook_attacks(int square, uint64_t& occupancy);
 
-unsigned int find_first_set_bit(uint64_t x);
-int Count_bits(uint64_t bitboard);
+unsigned int find_first_set_bit(uint64_t& x);
+int Count_bits(uint64_t& bitboard);
+int Count_bits_no_ref(uint64_t bitboard);
 
 void read_precomputed_moves(std::unordered_map<std::string, std::string>& precomputed_moves, std::string file_name);
 void init_sliders_attacks(int is_bishop);
 
-bool has_position_occured_two_times(uint64_t positionHash);
+bool has_position_occured_two_times(uint64_t& positionHash);
 
 uint64_t& getPawn(chessboard& BOARD, bool white);
 uint64_t& getBishop(chessboard& BOARD, bool white);

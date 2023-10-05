@@ -1,7 +1,7 @@
 #include "MyLibraries.h"
 
 std::vector<uint64_t> check_for_three_fold_repetition;
-bool has_position_occured_two_times(uint64_t positionHash) {
+bool has_position_occured_two_times(uint64_t& positionHash) {
     if (check_for_three_fold_repetition.size() < 3) return false;
     bool occured = false;
     //std::cout << "searching for:/" << position << "/\n";
@@ -100,11 +100,32 @@ int quiescenceSearch(chessboard& BOARD, int depth, bool White) {
     }
 }
 
+void alphaBeta(int& alpha, int& beta, int& eval, int& temp_eval, bool& White, int& depth, MOVE& move, bool& alpha_beta_not_break) {
+    if (White) {
+        if (eval > temp_eval) {
+            addFutureMove(depth - 1, move);
+        }
+        eval = std::max(eval, temp_eval);
+        alpha = std::max(alpha, eval);
+    }
+    else {
+        if (eval < temp_eval) {
+            addFutureMove(depth - 1, move);
+        }
+        eval = std::min(eval, temp_eval);
+        beta = std::min(beta, eval);
+    }
+
+    if (beta <= alpha)
+        alpha_beta_not_break = false;
+}
+
 void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int beta, int& eval) {
     if (depth > 0) {
         MOVES moves;
 
         //chessboard tempB = BOARD;
+        
         //if (folowBestPrewMoves) {
         //    if (depth > 1) {
         //        moves.captures[0] = futureMoves[depth - 1];
@@ -113,6 +134,7 @@ void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, in
         //    }
         //    else if ( depth == 1) 
         //        folowBestPrewMoves = false;
+        //        //execute reduced search here !
         //}
 
         if (depth == 1 && currentlyAnalysingDepth > 3) {
@@ -175,23 +197,8 @@ void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, in
 
                     penetration_manager(BOARD, depth - 1, !White, alpha, beta, temp_eval);
 
-                    if (White) {
-                        if (eval > temp_eval) {
-                            addFutureMove(depth - 1, moves.captures[i]);
-                        }
-                        eval = std::max(eval, temp_eval);
-                        alpha = std::max(alpha, eval);
-                    }
-                    else {
-                        if (eval < temp_eval) {
-                            addFutureMove(depth - 1, moves.captures[i]);
-                        }
-                        eval = std::min(eval, temp_eval);
-                        beta = std::min(beta, eval);
-                    }
+                    alphaBeta(alpha, beta, eval, temp_eval, White, depth, moves.captures[i], alpha_beta_not_break);
 
-                    if (beta <= alpha)
-                        alpha_beta_not_break = false;
                     nodes++;
 
                     undoMove(BOARD, moves.captures[i], White, tempCapture, tempEnpassant, tempCastling);
@@ -206,23 +213,8 @@ void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, in
                     penetration_manager(BOARD, depth - 1, !White, alpha, beta, temp_eval);
 
 
-                    if (White) {
-                        if (eval > temp_eval) {
-                            addFutureMove(depth - 1, moves.moves[i]);
-                        }
-                        eval = std::max(eval, temp_eval);
-                        alpha = std::max(alpha, eval);
-                    }
-                    else {
-                        if (eval < temp_eval) {
-                            addFutureMove(depth - 1, moves.moves[i]);
-                        }
-                        eval = std::min(eval, temp_eval);
-                        beta = std::min(beta, eval);
-                    }
+                    alphaBeta(alpha, beta, eval, temp_eval, White, depth, moves.moves[i], alpha_beta_not_break);
 
-                    if (beta <= alpha)
-                        alpha_beta_not_break = false;
                     nodes++;
 
                     undoMove(BOARD, moves.moves[i], White, tempCapture, tempEnpassant, tempCastling);
