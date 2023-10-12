@@ -8,10 +8,10 @@ uint64_t generate_random_number_mine_diamonds(int a) {
     std::uniform_int_distribution<uint64_t> distribution;
     return distribution(generator);
 }
-bool hash_eval_exists(uint64_t hash) {
+bool hash_eval_exists(uint64_t& hash) {
     return HASHES_AND_EVALS.count(hash);
 }
-int get_piece_value(bitboards board, int square) {
+int get_piece_value(bitboards& board, int square) {
     if (get_bit(board.pawns, square))return p;
     else if (get_bit(board.bishops, square))return b;
     else if (get_bit(board.knights, square))return n;

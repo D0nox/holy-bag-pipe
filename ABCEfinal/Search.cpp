@@ -1,4 +1,5 @@
 #include "MyLibraries.h"
+#include <future>
 
 std::vector<uint64_t> check_for_three_fold_repetition;
 bool has_position_occured_two_times(uint64_t& positionHash) {
@@ -14,6 +15,8 @@ bool has_position_occured_two_times(uint64_t& positionHash) {
     }
     return false;
 }
+
+std::mutex nodeMutex;
 
 void addFutureMove(int depth, MOVE move) {
     new_best_moves_mtx.lock();
@@ -54,19 +57,41 @@ void sort_positions(cheese_boards& BOARDS, bool white) {
         }
     }
 }
+uint64_t promotion_line_w = 0x7760000000000000;
+uint64_t promotion_line_b = 0x177400;
+bool arePawnsOnPromotionLine(uint64_t& pawns, bool white) {
+    if (white && ((pawns & promotion_line_w) != 0))return true;
+    else if (!white && ((pawns & promotion_line_b) != 0))return true;
+    else return false;
+}
 
-int quiescenceSearch(chessboard& BOARD, int depth, bool White) {
-    if (depth < -6)return EVAL(BOARD, depth);
+int quiescenceSearch(chessboard& BOARD, int depth, bool White, int alpha, int beta) {
+    nodeMutex.lock();
+    nodesQesc++;
+    nodeMutex.unlock();
+    if (depth < -10) { 
+        return EVAL(BOARD, depth, White);
+    }
     else {
-        MOVE capAndProm[64];
+        MOVE capAndProm[128];
         int count = 0;
+        int val = EVAL(BOARD, depth, White);
+        if (val >= beta)return beta;
+        if (val > alpha)
+            alpha = val;
+
+        int bigDelta = 900;
+        if (arePawnsOnPromotionLine(getPawn(BOARD, White), White))bigDelta += 700;
+
+        if (val < alpha - bigDelta)
+            return alpha;
 
         generateCapturesAndProm(BOARD, White, capAndProm, count);
+        
         if (count != 0) {
-            int capPiece, castling, tempENpass, tempENpass2, tempEval, eval = 100000;
+            int capPiece, castling, tempENpass, tempENpass2, tempEval;
             bool enPassa, tempBoolENpass, tempBoolENpass2;
 
-            if (White)eval = -100000;
 
             tempENpass2 = BOARD.en_passant;
             tempBoolENpass2 = BOARD.keep_en_passant;
@@ -78,40 +103,42 @@ int quiescenceSearch(chessboard& BOARD, int depth, bool White) {
 
             tempENpass = BOARD.en_passant;
             tempBoolENpass = BOARD.keep_en_passant;
-            nodesQesc += count;
+            
             for (int i = 0; i < count; i++) {
                 doMove(BOARD, capAndProm[i], White, capPiece, enPassa, castling);
-                tempEval = quiescenceSearch(BOARD, depth - 1, !White);
-                if (White) {
-                    eval = std::max(eval, tempEval);
-                }
-                else {
-                    eval = std::min(eval, tempEval);
-                }
+                tempEval = -quiescenceSearch(BOARD, depth - 1, !White, -beta, -alpha);
+
+                if (tempEval >= beta)
+                    return beta;
+                if (tempEval > alpha)
+                    alpha = tempEval;
+
+
                 undoMove(BOARD, capAndProm[i], White, capPiece, enPassa, castling);
                 BOARD.en_passant = tempENpass;
                 BOARD.keep_en_passant = tempBoolENpass;
             }
             BOARD.en_passant = tempENpass2;
             BOARD.keep_en_passant = tempBoolENpass2;
-            return eval;
+
+            return alpha;
         }
-        else return EVAL(BOARD, depth);
+        else return EVAL(BOARD, depth, White);
     }
 }
 
-void alphaBeta(int& alpha, int& beta, int& eval, int& temp_eval, bool& White, int& depth, MOVE& move, bool& alpha_beta_not_break) {
+void alphaBeta(int& alpha, int& beta, int& eval, int& temp_eval, bool& White, bool& alpha_beta_not_break) {
     if (White) {
-        if (eval > temp_eval) {
+        /*if (eval < temp_eval) {
             addFutureMove(depth - 1, move);
-        }
+        }*/
         eval = std::max(eval, temp_eval);
         alpha = std::max(alpha, eval);
     }
     else {
-        if (eval < temp_eval) {
+        /*if (eval > temp_eval) {
             addFutureMove(depth - 1, move);
-        }
+        }*/
         eval = std::min(eval, temp_eval);
         beta = std::min(beta, eval);
     }
@@ -120,12 +147,42 @@ void alphaBeta(int& alpha, int& beta, int& eval, int& temp_eval, bool& White, in
         alpha_beta_not_break = false;
 }
 
-void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int beta, int& eval) {
+int bestHashMove(MOVES& moves, chessboard& BOARD, bool White) {
+    int I = -1;
+    bool enPassant = false;
+    int castling = BOARD.castling, capt = -1, bestEval = -infinity;
+    for (int i = 0; i < moves.Count; i++) {
+        doMoveHash(BOARD, moves.moves[i], White, capt, enPassant, castling);
+
+        if (hash_eval_exists(BOARD.hash) && bestEval < HASHES_AND_EVALS[BOARD.hash]) { bestEval = HASHES_AND_EVALS[BOARD.hash]; I = i; }
+
+        undoMoveHash(BOARD, moves.moves[i], White, capt, enPassant, castling);
+    }
+    return I;
+}
+
+void sortMoves(MOVES& moves, chessboard& BOARD, bool White, int depth) {
+    if (currentlyAnalysingDepth - depth < currentlyAnalysingDepth - 1 && hash_eval_exists(BOARD.hash)) {
+        MOVE tempMove;
+        int temp = bestHashMove(moves, BOARD, White);
+        if (temp > 0) {
+            tempMove = moves.moves[0];
+            moves.moves[0] = moves.moves[temp];
+            for (int i = 1; i < temp; i++) {
+                moves.moves[temp] = tempMove;
+                tempMove = moves.moves[i];
+                moves.moves[i] = moves.moves[temp];
+            }
+        }
+    }
+}
+
+int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int beta) {
     if (depth > 0) {
         MOVES moves;
-
-        //chessboard tempB = BOARD;
         
+        //chessboard tempB = BOARD;
+
         //if (folowBestPrewMoves) {
         //    if (depth > 1) {
         //        moves.captures[0] = futureMoves[depth - 1];
@@ -137,15 +194,13 @@ void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, in
         //        //execute reduced search here !
         //}
 
-        if (depth == 1 && currentlyAnalysingDepth > 3) {
+        /*if (depth == 1 && currentlyAnalysingDepth > 3) {
             int Evallol = EVAL(BOARD, depth);
 
-        }
+        }*/
 
         bool alpha_beta_not_break = true;
 
-        auto start = std::chrono::high_resolution_clock::now();
-        auto end = std::chrono::high_resolution_clock::now();
 
         int enpassant_temp = BOARD.en_passant, stable_pos_temp = BOARD.position_is_stable, bababoy;
         bool enpassant_bool = BOARD.keep_en_passant, tempEnpassant = false, gagagon;
@@ -162,82 +217,74 @@ void penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, in
         gagagon = BOARD.keep_en_passant;
 
         generateAllMoves(BOARD, White, moves);
-        //if (depth == 1) { nodes += MOVE_COUNT(moves);/* nodnos += MOVE_COUNT(moves);*/ }
-        /*if (BOARD.hash == hashTemp) {
-            std::cout << MOVE_COUNT(moves)<<"\n";
-            print_board(BOARD);
-            if (moves.capture_c != 0)
-                for (int i = 0; i < moves.capture_c && alpha_beta_not_break; i++) {
-                    std::cout << change_to_readable_notation(moves.captures[i], White) << ": " << 1 << "\n";
-                }
-            if (moves.move_c != 0)
-                for (int i = 0; i < moves.move_c && alpha_beta_not_break; i++) {
-                    std::cout << change_to_readable_notation(moves.moves[i], White) << ": " << 1 << "\n";
-                }
-        }*/
-        if (MOVES_EMPTY(moves)) {
+
+        
+        //sortMoves(moves, BOARD, White, depth);
+
+
+        //if (depth == 1) nodes += moves.Count;
+        if (moves.Count == 0) {
             if (king_in_check(BOARD, White)) {
-                if (!White) { eval = 99999 - (DEPTH - depth); }
-                else { eval = -99999 + (DEPTH - depth); }
+                return checkmate + (DEPTH - depth);
             }
-            else {
-                if (White) { eval = 0; }
-                else if (!White) { eval = 0; }
-            }
+            else
+                return 0;
         }
         else {
-            int temp_eval;
-            eval = 100000;
-            if (White)eval = -100000;
+            int score;
 
-            BOARD.position_is_stable = false;
-            if (moves.capture_c != 0)
-                for (int i = 0; i < moves.capture_c && alpha_beta_not_break; i++) {
-                    doMove(BOARD, moves.captures[i], White, tempCapture, tempEnpassant, tempCastling);
-
-                    penetration_manager(BOARD, depth - 1, !White, alpha, beta, temp_eval);
-
-                    alphaBeta(alpha, beta, eval, temp_eval, White, depth, moves.captures[i], alpha_beta_not_break);
-
-                    nodes++;
-
-                    undoMove(BOARD, moves.captures[i], White, tempCapture, tempEnpassant, tempCastling);
-                    BOARD.en_passant = bababoy;
-                    BOARD.keep_en_passant = gagagon;
-                }
-            BOARD.position_is_stable = true;
-            if (moves.move_c != 0)
-                for (int i = 0; i < moves.move_c && alpha_beta_not_break; i++) {
+            if (moves.Count != 0)
+                for (int i = 0; i < moves.Count && alpha_beta_not_break; i++) {
                     doMove(BOARD, moves.moves[i], White, tempCapture, tempEnpassant, tempCastling);
+                    if (tempCapture != -1) {
+                        BOARD.position_is_stable = false;
+                    }
+                    score = -penetration_manager(BOARD, depth - 1, !White, -beta, -alpha);
+                    
 
-                    penetration_manager(BOARD, depth - 1, !White, alpha, beta, temp_eval);
+                    //HASHES_AND_EVALS[BOARD.hash] = eval;
 
-
-                    alphaBeta(alpha, beta, eval, temp_eval, White, depth, moves.moves[i], alpha_beta_not_break);
-
+                    nodeMutex.lock();
                     nodes++;
+                    nodeMutex.unlock();
 
                     undoMove(BOARD, moves.moves[i], White, tempCapture, tempEnpassant, tempCastling);
                     BOARD.en_passant = bababoy;
                     BOARD.keep_en_passant = gagagon;
+                    BOARD.position_is_stable = stable_pos_temp;
+
+                    //if (BOARD.hash != tempHash) {
+                    //    BOARD.hash = tempHash;
+                    //    std::cout << change_to_readable_notation(moves.moves[i], White);
+                    //}
+
+                    if (score >= beta)
+                        return beta;
+                    if (score > alpha)
+                        alpha = score;
+
                 }
+
+            /*if(depth > 2)
+                HASHES_AND_EVALS[BOARD.hash] = alpha;*/
+            
+            return alpha;
         }
         BOARD.position_is_stable = stable_pos_temp;
         BOARD.keep_en_passant = enpassant_bool;
         BOARD.en_passant = enpassant_temp;
     }
     else {
-        if (!BOARD.position_is_stable)
-            eval = quiescenceSearch(BOARD, depth, White);
+        /*if (!BOARD.position_is_stable)
+            return quiescenceSearch(BOARD, depth, White, alpha, beta);
 
-        else eval = EVAL(BOARD, depth);
+        else*/ return EVAL(BOARD, depth, White);
     }
 }
 
 int currentlyAnalysingDepth;
 
 void iterativeDepthAnalysis(chessboard BOARD, bool White, int depth, std::string& move_out, int initial_time) {
-
     double allowed_time = initial_time / 3000.0;
     auto start_of_all_analysis = std::chrono::high_resolution_clock::now();
     auto start = std::chrono::high_resolution_clock::now();
@@ -252,40 +299,40 @@ void iterativeDepthAnalysis(chessboard BOARD, bool White, int depth, std::string
     bool enPassant;
     int alpha = -100000, beta = 100000, Eval = -100000;
     MOVES generated_moves;
-
     std::string colour;
+
+
+    cheese_boards FIRST_LAYER_BOARDS;
+
+    std::vector<std::thread> threads;
+    std::vector<std::future<int>> futures;
+
 
     generateAllMoves(BOARD, White, generated_moves);
 
-    for (int i = 0; i < MOVE_COUNT(generated_moves); i++) {
+    for (int i = 0; i < generated_moves.Count; i++) {
         FIRST_LAYER_BOARDS.board[i] = BOARD;
     }
 
-    if (!MOVES_EMPTY(generated_moves)) {
-        if (generated_moves.capture_c != 0)
-            for (int i = 0; i < generated_moves.capture_c; i++) {
-                doMove(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], generated_moves.captures[i], White, capturedPiece, enPassant, tempCastling);
-                FIRST_LAYER_BOARDS.eval[FIRST_LAYER_BOARDS.n] = quiescenceSearch(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], 0, White);
-                FIRST_LAYER_BOARDS.moves[FIRST_LAYER_BOARDS.n++] = generated_moves.captures[i];
-            }
-        if (generated_moves.move_c != 0)
-            for (int i = 0; i < generated_moves.move_c; i++) {
-                doMove(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], generated_moves.moves[i], White, capturedPiece, enPassant, tempCastling);
-                FIRST_LAYER_BOARDS.eval[FIRST_LAYER_BOARDS.n] = EVAL(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], 1);
-                FIRST_LAYER_BOARDS.moves[FIRST_LAYER_BOARDS.n++] = generated_moves.moves[i];
-            }
-    }
+    if (generated_moves.Count != 0)
+        for (int i = 0; i < generated_moves.Count; i++) {
+            doMove(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], generated_moves.moves[i], White, capturedPiece, enPassant, tempCastling);
+            FIRST_LAYER_BOARDS.eval[FIRST_LAYER_BOARDS.n] = EVAL(FIRST_LAYER_BOARDS.board[FIRST_LAYER_BOARDS.n], 1, White);
+            FIRST_LAYER_BOARDS.moves[FIRST_LAYER_BOARDS.n++] = generated_moves.moves[i];
+        }
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-
+    
     std::cout << "\nEvaluating the position:\n";
     std::cout << "depth      nodes       time        speed      |    eval    | moves\n";
 
     sort_positions(FIRST_LAYER_BOARDS, White);
     futureMoves[0] = FIRST_LAYER_BOARDS.moves[0];
     print_stats(1, (duration.count() * 1.0), FIRST_LAYER_BOARDS.n, FIRST_LAYER_BOARDS.eval[0], White, FIRST_LAYER_BOARDS);
+
+    nodesQesc = 0;
 
     //dont analyse if only one move available
     if (FIRST_LAYER_BOARDS.n == 1) {
@@ -302,7 +349,7 @@ void iterativeDepthAnalysis(chessboard BOARD, bool White, int depth, std::string
         FIRST_LAYER_BOARDS.n = 0;
     }
     else if (FIRST_LAYER_BOARDS.n != 0) {
-        MAX_DEPTH = 2;
+        MAX_DEPTH = depth;
         for (int depth = STARTING_DEPTH; depth <= MAX_DEPTH; depth++) {
             currentlyAnalysingDepth = depth;
             start = std::chrono::high_resolution_clock::now();
@@ -311,43 +358,44 @@ void iterativeDepthAnalysis(chessboard BOARD, bool White, int depth, std::string
             allowed_time -= duration.count() / 1000.0;
             if (allowed_time < 0)break;
 
-            alpha = -100000, beta = 100000, Eval = -100000;
+            // Eval = -100000;
 
-            HOW_MANY_THREADS_AT_THE_SAME_TIME = 1;
+            HOW_MANY_THREADS_AT_THE_SAME_TIME = 6;
 
-            if (White)Eval = 100000;
+            //if (White)Eval = 100000;
 
             //// folowing best prev path
             //if (depth > 2) {
             //    folowBestPrewMoves = true;
             //    penetration_manager(FIRST_LAYER_BOARDS.board[0], depth - 1, !White, alpha, beta, FIRST_LAYER_BOARDS.eval[0]);
             //}
-
             for (int i = 0; i < FIRST_LAYER_BOARDS.n;) {
-                for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < FIRST_LAYER_BOARDS.n); j++) {
-                    FIRST_LAYER_BOARDS.eval[i + j] = Eval;
-                    threads.push_back(std::thread(penetration_manager, std::ref(FIRST_LAYER_BOARDS.board[i + j]), depth - 1, !White, std::ref(alpha), std::ref(beta), std::ref(FIRST_LAYER_BOARDS.eval[i + j])));//fuck you future me nigger (I commited reverse michael jackson)
+                for (int j = i; (j < i + HOW_MANY_THREADS_AT_THE_SAME_TIME && j < FIRST_LAYER_BOARDS.n); j++) {
+                    //FIRST_LAYER_BOARDS.eval[j] = Eval;
+                    //print_board(FIRST_LAYER_BOARDS.board[j]);
+                    //std::cout << std::setw(5) << std::left << change_to_readable_notation(FIRST_LAYER_BOARDS.moves[j], White) << "\n";
+                    std::packaged_task<int(chessboard&, int, bool, int, int)> task(penetration_manager);
+                    futures.emplace_back(task.get_future());
+                    threads.emplace_back(std::thread(std::move(task), std::ref(FIRST_LAYER_BOARDS.board[j]), depth - 1, !White, -beta, -alpha));
+                    //threads.push_back(std::thread(penetration_manager, std::ref(FIRST_LAYER_BOARDS.board[i + j]), depth - 1, !White, alpha, beta));//fuck you future me nigger (I commited reverse michael jackson)
                     nodes++;
                 }
-
-                for (auto& thread : threads)
-                    if (thread.joinable())thread.join();
-
                 for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < FIRST_LAYER_BOARDS.n); j++) {
-                    if (White) {
-                        alpha = std::max(alpha, FIRST_LAYER_BOARDS.eval[i + j]);
-                    }
-                    else {
-                        beta = std::min(beta, FIRST_LAYER_BOARDS.eval[i + j]);
-                    }
 
-                    if (beta <= alpha)break;
+                    if (threads[j].joinable())threads[j].join();
                 }
-                if (beta <= alpha)break;
+                //std::cout << "\n";
+                for (int j = 0; (j < HOW_MANY_THREADS_AT_THE_SAME_TIME && j + i < FIRST_LAYER_BOARDS.n); j++) {
+                    FIRST_LAYER_BOARDS.eval[j + i] = -futures[j].get();
+                    //std::cout << "|" << change_eval_to_readable(FIRST_LAYER_BOARDS.eval[j + i], depth) << "|\n\n";
+                    //if (FIRST_LAYER_BOARDS.eval[j + i] > alpha) alpha = FIRST_LAYER_BOARDS.eval[j + i];
+                }
+                threads.clear();
+                futures.clear();
 
                 i += HOW_MANY_THREADS_AT_THE_SAME_TIME;
-                if (HOW_MANY_THREADS_AT_THE_SAME_TIME < 6)
-                    HOW_MANY_THREADS_AT_THE_SAME_TIME += 2;
+                /*if (HOW_MANY_THREADS_AT_THE_SAME_TIME < 6)
+                    HOW_MANY_THREADS_AT_THE_SAME_TIME += 2;*/
             }
             end = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -355,7 +403,7 @@ void iterativeDepthAnalysis(chessboard BOARD, bool White, int depth, std::string
 
             sort_positions(FIRST_LAYER_BOARDS, White);
 
-            futureMoves[depth - 1] = FIRST_LAYER_BOARDS.moves[0];
+            futureMoves[0] = FIRST_LAYER_BOARDS.moves[0];
 
             print_stats(depth, time, nodes, FIRST_LAYER_BOARDS.eval[0], White, FIRST_LAYER_BOARDS);
 

@@ -28,5 +28,6 @@ extern MOVE futureMoves[20];
 extern bool folowBestPrewMoves;
 
 extern std::mutex new_best_moves_mtx;
+extern std::mutex nodeMutex;
 extern cheese_boards FIRST_LAYER_BOARDS;
 extern std::vector<std::thread> threads;

@@ -1,6 +1,6 @@
 #pragma once
 
-const std::string PrecomputedMovePath = "move_file12.txt";
+const std::string PrecomputedMovePath = "move_file1.txt";
 
 const uint64_t knight_magics[64] = {
     0x20400ULL,
@@ -320,7 +320,15 @@ const uint64_t trim_left = 0x8080808080808080;
 const uint64_t trim_right = 0x101010101010101;
 const int both_king_locations = e1 * 100 + e8;
 const int max_saved_board_n = 90;
-const int DEPTH = 8;
+
+const enum moveTypes{normal, capture, promotion};//move types
+
+
+const enum EvalValues{infinity = 100000, checkmate = -99999};
+
+
+const int DEPTH = 6;
+
 
 extern uint64_t bishop_masks[64];
 extern uint64_t rook_masks[64];

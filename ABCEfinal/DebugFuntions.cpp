@@ -52,10 +52,9 @@ std::string change_eval_to_readable(int eval, int depth) {
 
     if (depth % 2 != 0)depth++;
     depth /= 2;
+    /*if (eval >= 99990 || eval <= -99990)evalS = "M" + std::to_string(depth);
 
-    if (eval >= 99990 || eval <= -99990)evalS = "M" + depth;
-
-    else evalS = stringRound((eval / 1000.0), 2);
+    else*/ evalS = stringRound((eval / 1000.0), 2);
 
     return evalS;
 }
@@ -110,11 +109,14 @@ void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, c
     std::cout << std::setw(3) << std::right << depth << "    ";
 
     std::string colour;
-    if (white)
-        colour = (eval < 0 ? "\033[1;31m" : "\033[1;32m");
-    else
-        colour = (eval > 0 ? "\033[1;31m" : "\033[1;32m");
-
+    //std::cout << eval;
+    if (eval >= 50 || eval <= -50) {
+        if (white)
+            colour = (eval < 0 ? "\033[1;31m" : "\033[1;32m");
+        else
+            colour = (eval > 0 ? "\033[1;31m" : "\033[1;32m");
+    }
+    nodes += nodesQesc;
     if (nodes < 1000)std::cout << std::setw(6) << std::right << nodes << "  N ";
     else if (nodes < 1000000)std::cout << std::setw(6) << std::right << std::fixed << std::setprecision(2) << nodes / 1000.0 << " kN ";
     else std::cout << std::setw(6) << std::right << std::fixed << std::setprecision(2) << nodes / 1000000.0 << " mN ";
@@ -134,8 +136,10 @@ void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, c
         std::cout << change_to_readable_notation(FIRST_LAYER_BOARDS.moves[i], white) << " " << std::setw(6) << std::right << change_eval_to_readable(FIRST_LAYER_BOARDS.eval[i], depth)<< "| ";
     std::cout << "\n";*/
 
-    for (int i = 0; i < 10 && i < depth; i++) {
-        std::cout << std::setw(5) << std::left << change_to_readable_notation(futureMoves[depth - i - 1], white) << " ";
+    for (int i = 0; i < 2 && i < FIRST_LAYER_BOARDS.n; i++) {
+        std::cout << std::setw(5) << std::left << change_to_readable_notation(FIRST_LAYER_BOARDS.moves[i], white) << " ";
+        //std::cout << std::setw(5) << std::left << change_to_readable_notation(futureMoves[depth - i - 1], white) << " ";
+        //std::cout << change_eval_to_readable(FIRST_LAYER_BOARDS.eval[i], depth) << " |";
     }
     std::cout << "\n"; std::cout << nodesQesc << "\n";
 }
@@ -143,22 +147,43 @@ uint64_t perft(std::string fen, int depth) {
     int idc;
     bool white;
     chessboard BOARD = initialize_chessboard(fen, white, idc), temp = BOARD;
-    penetration_manager(BOARD, depth, white, idc, idc, idc);
+    penetration_manager(BOARD, depth, white, idc, idc);
     if (!are_chessboards_equal(BOARD, temp)) {
         std::cout << fen << " broke";
-        exit(1);
+        system("pause");
+        //exit(1);
     }
     uint64_t nonodes = nodes;
     nodes = 0, nodesQesc = 0;
     return nonodes;
 }
+void notEqualBoardsDebug(chessboard& tempB, chessboard& BOARD, bool white) {
+    if (!are_chessboards_equal(tempB, BOARD)) {
+        std::cout << "Should be:\n";
+        print_board(tempB);
+        std::cout << "Is:\n";
+        print_board(BOARD);
+
+        std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
+        std::cout << "hash: " << (BOARD.hash == tempB.hash ? "unchanged" : "changed") << "\n";
+        std::cout << "position_is_stable: " << (BOARD.position_is_stable == tempB.position_is_stable ? "unchanged" : "changed") << "\n";
+        std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
+        std::cout << "en_passant: " << (BOARD.en_passant == tempB.en_passant ? "unchanged" : "changed") << "\n";
+        std::cout << "keep_en_passant: " << (BOARD.keep_en_passant == tempB.keep_en_passant ? "unchanged" : "changed") << "\n";
+        std::cout << "colour: " << (white ? "white" : "black");
+        std::cout<< "\n";
+        BOARD = tempB;
+        std::cout << king_in_check(BOARD, 0);
+        //MOVES eh;
+        //generateAllMoves(BOARD, white, eh);
+    }
+}
 void single_perft(std::string fen, int depth) {
     int idc, total = 0;
     bool white;
     chessboard BOARD = initialize_chessboard(fen, white, idc), tempB = BOARD;
-
-    MOVES generated_moves, haha;
     print_board(BOARD);
+    MOVES generated_moves, haha;
     /*generateAllMoves(BOARD, white, generated_moves);
     std::cout << "\nBoard is" << (are_chessboards_equal(tempB, BOARD) ? " " : " not ") << "preserved\n";
     if (!MOVES_EMPTY(generated_moves)) {
@@ -184,10 +209,10 @@ void single_perft(std::string fen, int depth) {
     std::cout << "\nposition: " << fen << "\n\n";
     for (int i = 1; i <= depth; i++) {
         std::cout << "\n";
-        auto start = std::chrono::high_resolution_clock::now();
         starting_depth = depth;
+        auto start = std::chrono::high_resolution_clock::now();
         //print_board(BOARD);
-        penetration_manager(BOARD, i, white, idc, idc, idc);
+        penetration_manager(BOARD, i, white, idc, idc);
         //print_board(BOARD);
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -199,20 +224,7 @@ void single_perft(std::string fen, int depth) {
         /*for (int j = 0; j < FIRST_LAYER_BOARDS.n; j++)
             std::cout << change_to_readable_notation(FIRST_LAYER_BOARDS.moves[j], white) << "|";*/
         std::cout << "\nBoard is" << (are_chessboards_equal(tempB, BOARD) ? " " : " not ") << "preserved\n";
-        if (!are_chessboards_equal(tempB, BOARD)) {
-            std::cout << "Should be:\n";
-            print_board(tempB);
-            std::cout << "Is:\n";
-            print_board(BOARD);
-
-            std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
-            std::cout << "hash: " << (BOARD.hash == tempB.hash ? "unchanged" : "changed") << "\n";
-            std::cout << "position_is_stable: " << (BOARD.position_is_stable == tempB.position_is_stable ? "unchanged" : "changed") << "\n";
-            std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
-            std::cout << "en_passant: " << (BOARD.en_passant == tempB.en_passant ? "unchanged" : "changed") << "\n";
-            std::cout << "keep_en_passant: " << (BOARD.keep_en_passant == tempB.keep_en_passant ? "unchanged" : "changed") << "\n";
-            std::cout << "colour: " << (white ? "white" : "black") << "\n";
-        }
+        notEqualBoardsDebug(tempB, BOARD, white);
     }
 
 }
@@ -319,9 +331,10 @@ void do_many_perft_tests(std::string file_loc) {
 
 void test(std::string fen, int depth) {
     bool White;
-    int time;
+    int time = 10000000000;
     std::string best_move;
     chessboard BOARD = initialize_chessboard(fen, White, time);
+    print_board(BOARD);
     iterativeDepthAnalysis(BOARD, White, depth, best_move, time);
 }
 

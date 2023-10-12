@@ -82,12 +82,6 @@ chessboard initialize_chessboard(std::string FenCode, bool& White, int& time) {
     return board;
 }
 
-bool MOVES_EMPTY(MOVES& moves) {
-    return moves.move_c == 0 && moves.capture_c == 0;
-}
-int MOVE_COUNT(MOVES& moves) {
-    return moves.move_c + moves.capture_c;
-}
 unsigned int generate_random_number()
 {
     // XOR shift algorithm
@@ -115,17 +109,7 @@ uint64_t random_U64()
 uint64_t random_fewbits() {
     return random_U64() & random_U64() & random_U64();
 }
-int Count_bits(uint64_t& bitboard) {
-    //Hamming weight algorithm or something
-    bitboard = bitboard - ((bitboard >> 1) & 0x5555555555555555ULL);
-    bitboard = (bitboard & 0x3333333333333333ULL) + ((bitboard >> 2) & 0x3333333333333333ULL);
-    bitboard = (bitboard + (bitboard >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
-    bitboard = bitboard + (bitboard >> 8);
-    bitboard = bitboard + (bitboard >> 16);
-    bitboard = bitboard + (bitboard >> 32);
-    return static_cast<int>(bitboard & 0x7f);
-}
-int Count_bits_no_ref(uint64_t bitboard) {
+int Count_bits(uint64_t bitboard) {
     //Hamming weight algorithm or something
     bitboard = bitboard - ((bitboard >> 1) & 0x5555555555555555ULL);
     bitboard = (bitboard & 0x3333333333333333ULL) + ((bitboard >> 2) & 0x3333333333333333ULL);
@@ -140,7 +124,7 @@ int get_ls1b_index(unsigned long long bitboard) {
     // make sure bitboard is not empty
     if (bitboard != 0)
         // convert trailing zeros before LS1B to ones and count them
-        return Count_bits_no_ref((bitboard & (-1 * bitboard)) - 1);
+        return Count_bits((bitboard & (-1 * bitboard)) - 1);
 
     // otherwise
     else
@@ -325,7 +309,7 @@ uint64_t find_magic(int square, int relevant_bits, int bishop) {
         uint64_t magic = random_fewbits();
 
         // skip testing magic number if inappropriate
-        if (Count_bits_no_ref((mask_attack * magic) & 0xFF00000000000000ULL) < 6) continue;
+        if (Count_bits((mask_attack * magic) & 0xFF00000000000000ULL) < 6) continue;
 
         // reset used attacks array
         memset(used_attacks, 0ULL, sizeof(used_attacks));
@@ -460,7 +444,7 @@ void init_sliders_attacks(int is_bishop)
         uint64_t mask = is_bishop ? mask_bishop_attacks(square) : mask_rook_attacks(square);
 
         // count attack mask bits
-        int bit_count = Count_bits_no_ref(mask);
+        int bit_count = Count_bits(mask);
 
         // occupancy variations count
         int occupancy_variations = 1 << bit_count;
@@ -488,7 +472,7 @@ void init_sliders_attacks(int is_bishop)
         }
     }
 }
-uint64_t get_bishop_attacks(int square, uint64_t& occupancy) {
+uint64_t get_bishop_attacks(int square, uint64_t occupancy) {
     // calculate magic index
     occupancy &= bishop_masks[square];
     occupancy *= bishop_magics[square];
@@ -498,7 +482,7 @@ uint64_t get_bishop_attacks(int square, uint64_t& occupancy) {
     return bishop_attacks[square][occupancy];
 
 }
-uint64_t get_rook_attacks(int square, uint64_t& occupancy) {
+uint64_t get_rook_attacks(int square, uint64_t occupancy) {
 
     // calculate magic index
     occupancy &= rook_masks[square];
@@ -1154,8 +1138,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                         while (temp_move != 0) {
                             set_bit(BOARD.white.pawns, (move_to_square = find_first_set_bit(temp_move)));
                             if (!king_in_check(BOARD, White)) {
-                                moves.moves[moves.move_c].from = square;
-                                moves.moves[moves.move_c++].to = move_to_square;
+                                moves.moves[moves.Count].from = square;
+                                moves.moves[moves.Count++].to = move_to_square;
                             }
                             pop_bit(BOARD.white.pawns, move_to_square);
                             pop_bit(temp_move, move_to_square);
@@ -1167,8 +1151,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.white.knights, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.white.knights, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1180,8 +1164,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.white.bishops, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.white.bishops, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1193,8 +1177,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.white.queen, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.white.queen, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1206,8 +1190,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.white.rooks, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.white.rooks, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1231,8 +1215,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                                     pop_bit(BOARD.white.rooks, a1);
                                     set_bit(BOARD.white.rooks, d1);
                                     if (!king_in_check(BOARD, White)) {
-                                        moves.moves[moves.move_c].from = square;
-                                        moves.moves[moves.move_c++].to = c1;
+                                        moves.moves[moves.Count].from = square;
+                                        moves.moves[moves.Count++].to = c1;
                                     }
                                     set_bit(BOARD.white.rooks, a1);
                                     pop_bit(BOARD.white.rooks, d1);
@@ -1253,8 +1237,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                                     pop_bit(BOARD.white.rooks, h1);
                                     set_bit(BOARD.white.rooks, f1);
                                     if (!king_in_check(BOARD, White)) {
-                                        moves.moves[moves.move_c].from = square;
-                                        moves.moves[moves.move_c++].to = g1;
+                                        moves.moves[moves.Count].from = square;
+                                        moves.moves[moves.Count++].to = g1;
                                     }
                                     set_bit(BOARD.white.rooks, h1);
                                     pop_bit(BOARD.white.rooks, f1);
@@ -1268,8 +1252,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.white.king, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.white.king, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1291,8 +1275,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                         while (temp_move != 0) {
                             set_bit(BOARD.black.pawns, (move_to_square = find_first_set_bit(temp_move)));
                             if (!king_in_check(BOARD, White)) {
-                                moves.moves[moves.move_c].from = square;
-                                moves.moves[moves.move_c++].to = move_to_square;
+                                moves.moves[moves.Count].from = square;
+                                moves.moves[moves.Count++].to = move_to_square;
                             }
                             pop_bit(BOARD.black.pawns, move_to_square);
                             pop_bit(temp_move, move_to_square);
@@ -1304,8 +1288,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.black.knights, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.black.knights, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1317,8 +1301,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.black.bishops, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.black.bishops, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1330,8 +1314,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.black.queen, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.black.queen, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1343,8 +1327,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.black.rooks, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.black.rooks, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1368,8 +1352,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                                     pop_bit(BOARD.black.rooks, a8);
                                     set_bit(BOARD.black.rooks, d8);
                                     if (!king_in_check(BOARD, White)) {
-                                        moves.moves[moves.move_c].from = square;
-                                        moves.moves[moves.move_c++].to = c8;
+                                        moves.moves[moves.Count].from = square;
+                                        moves.moves[moves.Count++].to = c8;
                                     }
                                     set_bit(BOARD.black.rooks, a8);
                                     pop_bit(BOARD.black.rooks, d8);
@@ -1390,8 +1374,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                                     pop_bit(BOARD.black.rooks, h8);
                                     set_bit(BOARD.black.rooks, f8);
                                     if (!king_in_check(BOARD, White)) {
-                                        moves.moves[moves.move_c].from = square;
-                                        moves.moves[moves.move_c++].to = g8;
+                                        moves.moves[moves.Count].from = square;
+                                        moves.moves[moves.Count++].to = g8;
                                     }
                                     set_bit(BOARD.black.rooks, h8);
                                     pop_bit(BOARD.black.rooks, f8);
@@ -1405,8 +1389,8 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
                     while (temp_move != 0) {
                         set_bit(BOARD.black.king, (move_to_square = find_first_set_bit(temp_move)));
                         if (!king_in_check(BOARD, White)) {
-                            moves.moves[moves.move_c].from = square;
-                            moves.moves[moves.move_c++].to = move_to_square;
+                            moves.moves[moves.Count].from = square;
+                            moves.moves[moves.Count++].to = move_to_square;
                         }
                         pop_bit(BOARD.black.king, move_to_square);
                         pop_bit(temp_move, move_to_square);
@@ -1419,7 +1403,7 @@ void generateMoves(chessboard& BOARD, bool White, MOVES& moves)
     }
 }
 void generateAllMoves(chessboard& BOARD, bool White, MOVES& moves) {
-    generateCapturesAndProm(BOARD, White, moves.captures, moves.capture_c);
+    generateCapturesAndProm(BOARD, White, moves.moves, moves.Count);
     generateMoves(BOARD, White, moves);
 }
 bool king_in_check(chessboard& BOARD, bool white) {
@@ -1432,12 +1416,14 @@ bool king_in_check(chessboard& BOARD, bool white) {
     if ((((temp_attack = get_rook_attacks(kingsquare, all_occupancy)) & getRook(BOARD, !white)) != 0) || ((temp_attack & getQueen(BOARD, !white)) != 0))return true;
     if ((get_knight_attacks(kingsquare) & getKnight(BOARD, !white)) != 0)return true;
     if ((get_king_attacks(kingsquare) & getKing(BOARD, !white)) != 0)return true;
-    if (white) 
+    if (white) {
         if (((((BOARD.white.king & ~trim_left) << (BOARD_WIDTH + 1)) & BOARD.black.pawns) != 0)
             || ((((BOARD.white.king & ~trim_right) << (BOARD_WIDTH - 1)) & BOARD.black.pawns) != 0)) return true;
-    else
+    }
+    else {
         if (((((BOARD.black.king & ~trim_left) >> (BOARD_WIDTH - 1)) & BOARD.white.pawns) != 0) 
             || ((((BOARD.black.king & ~trim_right) >> (BOARD_WIDTH + 1)) & BOARD.white.pawns) != 0)) return true;
+    }
 
     return false;
 }

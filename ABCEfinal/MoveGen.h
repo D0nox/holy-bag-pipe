@@ -28,12 +28,11 @@ uint64_t get_knight_attacks(int square);
 uint64_t get_king_attacks(int square);
 uint64_t get_occupancy(bitboards& a);
 uint64_t get_occupancy(chessboard& a);
-uint64_t get_bishop_attacks(int square, uint64_t& occupancy);
-uint64_t get_rook_attacks(int square, uint64_t& occupancy);
+uint64_t get_bishop_attacks(int square, uint64_t occupancy);
+uint64_t get_rook_attacks(int square, uint64_t occupancy);
 
 unsigned int find_first_set_bit(uint64_t& x);
-int Count_bits(uint64_t& bitboard);
-int Count_bits_no_ref(uint64_t bitboard);
+int Count_bits(uint64_t bitboard);
 
 void read_precomputed_moves(std::unordered_map<std::string, std::string>& precomputed_moves, std::string file_name);
 void init_sliders_attacks(int is_bishop);

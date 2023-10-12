@@ -112,7 +112,7 @@ const int queen_value = 9 * pawn;
 const int king_value = 0 * pawn;//worthless piece of shit 
 
 //const enum { p, b, n, r, q, k, rA, rH };
-const int moveValue[2][6][64] = {
+const int MOVEVALUE[2][6][64] = {
     {//black
         {//pawn
         0, 0, 0, 0, 0, 0, 0, 0,

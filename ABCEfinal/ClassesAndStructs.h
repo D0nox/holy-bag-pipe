@@ -3,8 +3,8 @@ struct MOVE {
     int from, to;
 };
 struct MOVES {
-    MOVE moves[128], captures[128];
-    int move_c = 0, capture_c = 0;
+    MOVE moves[256];
+    int Count = 0;
 };
 struct bitboards
 {

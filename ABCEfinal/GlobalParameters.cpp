@@ -37,5 +37,3 @@ MOVE futureMoves[20];
 bool folowBestPrewMoves = false;
 
 std::mutex new_best_moves_mtx;
-cheese_boards FIRST_LAYER_BOARDS;
-std::vector<std::thread> threads;
