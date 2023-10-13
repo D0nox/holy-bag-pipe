@@ -109,8 +109,8 @@ void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, c
     std::cout << std::setw(3) << std::right << depth << "    ";
 
     std::string colour;
-    //std::cout << eval;
-    if (eval >= 50 || eval <= -50) {
+    //std::cout <<"(" << eval << ")";
+    if (eval >= 100 || eval <= -100) {
         if (white)
             colour = (eval < 0 ? "\033[1;31m" : "\033[1;32m");
         else
@@ -141,7 +141,7 @@ void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, c
         //std::cout << std::setw(5) << std::left << change_to_readable_notation(futureMoves[depth - i - 1], white) << " ";
         //std::cout << change_eval_to_readable(FIRST_LAYER_BOARDS.eval[i], depth) << " |";
     }
-    std::cout << "\n"; std::cout << nodesQesc << "\n";
+    std::cout << "\n";// std::cout << nodesQesc << "\n";
 }
 uint64_t perft(std::string fen, int depth) {
     int idc;
@@ -157,9 +157,10 @@ uint64_t perft(std::string fen, int depth) {
     nodes = 0, nodesQesc = 0;
     return nonodes;
 }
-void notEqualBoardsDebug(chessboard& tempB, chessboard& BOARD, bool white) {
+bool notEqualBoardsDebug(chessboard& tempB, chessboard& BOARD, bool white) {
     if (!are_chessboards_equal(tempB, BOARD)) {
-        std::cout << "Should be:\n";
+        MUTEX.lock();
+        std::cout << "BOARD is broken.\nShould be:\n";
         print_board(tempB);
         std::cout << "Is:\n";
         print_board(BOARD);
@@ -167,16 +168,18 @@ void notEqualBoardsDebug(chessboard& tempB, chessboard& BOARD, bool white) {
         std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
         std::cout << "hash: " << (BOARD.hash == tempB.hash ? "unchanged" : "changed") << "\n";
         std::cout << "position_is_stable: " << (BOARD.position_is_stable == tempB.position_is_stable ? "unchanged" : "changed") << "\n";
-        std::cout << "castling: " << (BOARD.castling == tempB.castling ? "unchanged" : "changed") << "\n";
         std::cout << "en_passant: " << (BOARD.en_passant == tempB.en_passant ? "unchanged" : "changed") << "\n";
         std::cout << "keep_en_passant: " << (BOARD.keep_en_passant == tempB.keep_en_passant ? "unchanged" : "changed") << "\n";
         std::cout << "colour: " << (white ? "white" : "black");
         std::cout<< "\n";
         BOARD = tempB;
-        std::cout << king_in_check(BOARD, 0);
+        std::cout << "King is " << (king_in_check(BOARD, 0) ? "": "not") << " in check\n";
+        //MUTEX.unlock();
+        return true;
         //MOVES eh;
         //generateAllMoves(BOARD, white, eh);
     }
+    return false;
 }
 void single_perft(std::string fen, int depth) {
     int idc, total = 0;
@@ -334,8 +337,11 @@ void test(std::string fen, int depth) {
     int time = 10000000000;
     std::string best_move;
     chessboard BOARD = initialize_chessboard(fen, White, time);
+    chessboard tempB = BOARD;
     print_board(BOARD);
     iterativeDepthAnalysis(BOARD, White, depth, best_move, time);
+    //print_board(BOARD);
+    notEqualBoardsDebug(BOARD, tempB, White);
 }
 
 #include <fcntl.h>

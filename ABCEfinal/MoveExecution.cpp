@@ -253,9 +253,9 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
             }
             else if (move.to == c1 + BlackSide) {
                 hash_move_piece(reversed_move, White, BOARD);
-                move_piece(getColour(BOARD, White), reversed_move);
                 hash_summon_piece(a1 + BlackSide, White, BOARD, r);
                 hash_delete_piece(d1 + BlackSide, White, BOARD);
+                move_piece(getColour(BOARD, White), reversed_move);
                 set_bit(getRook(BOARD, White), a1 + BlackSide);
                 pop_bit(getRook(BOARD, White), d1 + BlackSide);
             }

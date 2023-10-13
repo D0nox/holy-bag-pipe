@@ -32,7 +32,7 @@ int main()
     
     generate_hashes_for_board_hashing();
 
-    //startMainProgram();
+    startMainProgram();
 
 
     #pragma region ALotOfPerftTests
@@ -55,7 +55,7 @@ int main()
 
     #pragma region SinglePositionAnalysisTests
 
-    test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 7);
+    //test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 8);
     //test("8/1N6/p3kp2/8/2P5/1P5p/5Kp1/4n3 b - - 1 59", 9);
     //test("rnbqkb1r/ppp2ppp/4pn2/3p4/8/P1N2N2/1PPPPPPP/R1BQKB1R w KQkq d6 0 4", 2);
     //test("3rkbn1/pp4p1/7r/P3pp2/RpP3p1/4P1P1/1PK1NP1P/1N5R w - f6 0 16", 2);
