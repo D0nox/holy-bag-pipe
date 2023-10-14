@@ -56,6 +56,7 @@ int main()
     #pragma region SinglePositionAnalysisTests
 
     //test("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 8);
+    //test("2r1k3/pp1b1pp1/n7/3R4/8/N1P1P3/PP3rPP/2K3NR w - - 0 20", 8);//a3h5 g1h3
     //test("8/1N6/p3kp2/8/2P5/1P5p/5Kp1/4n3 b - - 1 59", 9);
     //test("rnbqkb1r/ppp2ppp/4pn2/3p4/8/P1N2N2/1PPPPPPP/R1BQKB1R w KQkq d6 0 4", 2);
     //test("3rkbn1/pp4p1/7r/P3pp2/RpP3p1/4P1P1/1PK1NP1P/1N5R w - f6 0 16", 2);

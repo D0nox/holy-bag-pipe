@@ -327,7 +327,7 @@ const enum moveTypes{normal, capture, promotion};//move types
 const enum EvalValues{infinity = 100000, checkmate = -99999};
 
 
-const int DEPTH = 7;
+
 
 
 extern uint64_t bishop_masks[64];

@@ -3,6 +3,7 @@
 // does not keep previous en passant and previous stable pos bools
 
 void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
+    BOARD.hash ^= BLACKHASH;
     capturedPiece = -1;
     int prom_to = 0;
     if (move.to > 63) {
@@ -121,6 +122,7 @@ void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool&
     }
 }
 void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
+    BOARD.hash ^= BLACKHASH;
     capturedPiece = -1;
     int prom_to = 0;
     if (move.to > 63) {
@@ -196,6 +198,7 @@ void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, b
     }
 }
 void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
+    BOARD.hash ^= BLACKHASH;
     int prom_to = 0;
     if (move.to > 63) {
         if (move.to < 72)prom_to = q;
@@ -298,6 +301,7 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
     }
 }
 void undoMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
+    BOARD.hash ^= BLACKHASH;
     int prom_to = 0;
     if (move.to > 63) {
         if (move.to < 72)prom_to = q;

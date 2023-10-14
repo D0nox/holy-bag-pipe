@@ -203,6 +203,9 @@ void sortMoves(MOVES& moves, chessboard& BOARD, bool White, int depth) {
 }
 
 int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int beta) {
+    nodeMutex.lock();
+    nodes++;
+    nodeMutex.unlock();
     if (depth > 0) {
         MOVES moves;
         
@@ -228,7 +231,7 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
 
 
         int enpassant_temp = BOARD.en_passant, stable_pos_temp = BOARD.position_is_stable, bababoy;
-        bool enpassant_bool = BOARD.keep_en_passant, tempEnpassant = false, gagagon;
+        bool enpassant_bool = BOARD.keep_en_passant, tempEnpassant = false, gagagon, ownKingInCheck = king_in_check(BOARD, White);
 
         int tempCapture, tempCastling;
 
@@ -256,32 +259,37 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
                 return 0;
         }
         else {
-            int score;
+            int score, posEval;
+            if(depth <= 2) posEval = EVAL(BOARD, depth, White);
 
             if (moves.Count != 0)
                 for (int i = 0; i < moves.Count && alpha_beta_not_break; i++) {
                     doMove(BOARD, moves.moves[i], White, tempCapture, tempEnpassant, tempCastling);
+                    BOARD.hash ^= BLACKHASH;
+
                     if (tempCapture != -1) {
                         BOARD.position_is_stable = false;
                     }
-                    score = -penetration_manager(BOARD, depth - 1, !White, -beta, -alpha);
+                    if (depth <= 2) {
+                        if ((!ownKingInCheck || tempCapture == -1 || !king_in_check(BOARD, !White)) && posEval < alpha - futilityMargin[depth - 1])
+                            score = posEval;
+                        else
+                            score = -penetration_manager(BOARD, depth - 1, !White, -beta, -alpha);;
+                    }
+                    else {
+                        score = -penetration_manager(BOARD, depth - 1, !White, -beta, -alpha);
+                    }
                     
 
                     //HASHES_AND_EVALS[BOARD.hash] = eval;
 
-                    nodeMutex.lock();
-                    nodes++;
-                    nodeMutex.unlock();
-
+                    
+                    BOARD.hash ^= BLACKHASH;
                     undoMove(BOARD, moves.moves[i], White, tempCapture, tempEnpassant, tempCastling);
                     BOARD.en_passant = bababoy;
                     BOARD.keep_en_passant = gagagon;
                     BOARD.position_is_stable = stable_pos_temp;
 
-                    //if (BOARD.hash != tempHash) {
-                    //    BOARD.hash = tempHash;
-                    //    std::cout << change_to_readable_notation(moves.moves[i], White);
-                    //}
 
                     if (score >= beta) {
                         BOARD.position_is_stable = stable_pos_temp;
@@ -453,15 +461,32 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
 
         std::cout << "\n\nBest move: ";
         if (
-            (!has_position_occured_two_times(FIRST_LAYER_BOARDS.board[0].hash) ||
-                FIRST_LAYER_BOARDS.eval[0] < 0 && White) ||
-            (FIRST_LAYER_BOARDS.eval[0] > 0 && !White) ||
+            (
+                !has_position_occured_two_times(FIRST_LAYER_BOARDS.board[0].hash)
+                ||
+                (
+                    (
+                        FIRST_LAYER_BOARDS.eval[1] > 0 
+                        ||
+                        FIRST_LAYER_BOARDS.eval[0] < 0
+                    ) 
+                    &&
+                    White
+                )
+            )
+            ||
+            (
+                FIRST_LAYER_BOARDS.eval[0] > 0 && !White
+            ) 
+            ||
             FIRST_LAYER_BOARDS.n == 1
-            ) {
+           )
+        {
             move_out = change_to_readable_notation(FIRST_LAYER_BOARDS.moves[0], White);
             eval = FIRST_LAYER_BOARDS.eval[0];
         }
         else {
+            std::cout << "First move was repetition, took second move\n";
             move_out = change_to_readable_notation(FIRST_LAYER_BOARDS.moves[1], White);
             eval = FIRST_LAYER_BOARDS.eval[1];
             check_for_three_fold_repetition.push_back(FIRST_LAYER_BOARDS.board[1].hash);
