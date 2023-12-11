@@ -1,7 +1,7 @@
 #include "MyLibraries.h"
 
 uint64_t CASTLINGHASH[16];
-uint64_t PIECEHASH[6][64];
+uint64_t PIECEHASH[2][6][64];
 uint64_t ENPASSANTHASH[8];
 uint64_t BLACKHASH;
 
@@ -26,9 +26,10 @@ int get_piece_value(bitboards& board, int square) {
     else return -1;
 }
 void generate_hashes_for_board_hashing() {
-    for (int i = 0; i < 6; i++)
-        for (int j = 0; j < 64; j++)
-            PIECEHASH[i][j] = generate_random_number_mine_diamonds(i + j);
+    for(int k = 0; k < 2; k++)
+        for (int i = 0; i < 6; i++)
+            for (int j = 0; j < 64; j++)
+                PIECEHASH[k][i][j] = generate_random_number_mine_diamonds(k * 6 * 64 + i * 64 + j);
 
     BLACKHASH = generate_random_number_mine_diamonds(-1);
 
@@ -39,12 +40,12 @@ void generate_hashes_for_board_hashing() {
         CASTLINGHASH[i] = generate_random_number_mine_diamonds(-10 - i);
 }
 void hash_move_piece(MOVE& move, bool white, chessboard& board) {
-    board.hash ^= PIECEHASH[get_piece_value(getColour(board, white), move.from)][move.from];
-    board.hash ^= PIECEHASH[get_piece_value(getColour(board, white), move.from)][move.to];
+    board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, white), move.from)][move.from];
+    board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, white), move.from)][move.to];
 }
 void hash_move_piece(MOVE& move, bool white, chessboard& board, int pieceValue) {
-    board.hash ^= PIECEHASH[pieceValue][move.from];
-    board.hash ^= PIECEHASH[pieceValue][move.to];
+    board.hash ^= PIECEHASH[white][pieceValue][move.from];
+    board.hash ^= PIECEHASH[white][pieceValue][move.to];
 
 }
 void generate_hash_for_pos(chessboard& board, bool white) {
@@ -55,31 +56,22 @@ void generate_hash_for_pos(chessboard& board, bool white) {
     while (temp_occ != 0) {
         square = find_first_set_bit(temp_occ);
         pop_bit(temp_occ, square);
-        board.hash ^= PIECEHASH[get_piece_value(getColour(board, true), square)][square];
+        board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, true), square)][square];
     }
     temp_occ = get_occupancy(board.black);
     while (temp_occ != 0) {
         square = find_first_set_bit(temp_occ);
         pop_bit(temp_occ, square);
-        board.hash ^= PIECEHASH[get_piece_value(getColour(board, false), square)][square];
+        board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, false), square)][square];
     }
 }
 void hash_delete_piece(int square, bool white, chessboard& board) {
-    if (white)
-        board.hash ^= BOARD_HASHES[1][get_piece_value(board.white, square)][square];
-    else
-        board.hash ^= BOARD_HASHES[0][get_piece_value(board.black, square)][square];
+    board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, white), square)][square];
 }
 void hash_delete_piece(int square, bool white, chessboard& board, int pieceValue) {
-    if (white)
-        board.hash ^= BOARD_HASHES[1][pieceValue][square];
-    else
-        board.hash ^= BOARD_HASHES[0][pieceValue][square];
+    board.hash ^= PIECEHASH[white][pieceValue][square];
 }
 void hash_summon_piece(int square, bool white, chessboard& board, int piece) {
     if (piece == rA || piece == rH) piece = r;
-    if (white)
-        board.hash ^= BOARD_HASHES[1][piece][square];
-    else
-        board.hash ^= BOARD_HASHES[0][piece][square];
+        board.hash ^= BOARD_HASHES[white][piece][square];
 }

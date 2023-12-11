@@ -29,3 +29,5 @@
 #include "MoveGen.h"
 #include "Search.h"
 #include "ZobristHashing.h"
+#include "DebugConstants.h"
+#include "BookReadingFunctions.h"

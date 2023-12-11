@@ -64,8 +64,8 @@ void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomp
             }
         }
         else {
-            std::vector<std::string> split_fen = split(message, ' ');
-            std::string cut_fen = split_fen[0] + ' ' + split_fen[1] + ' ' + split_fen[2] + ' ' + split_fen[3];
+            //std::vector<std::string> split_fen = split(message, ' ');
+            //std::string cut_fen = split_fen[0] + ' ' + split_fen[1] + ' ' + split_fen[2] + ' ' + split_fen[3];
             chessboard BOARD = initialize_chessboard(message, White, time);
             iterativeDepthAnalysis(BOARD, White, DEPTH, best_move, time);
             My_analysed_moves++;

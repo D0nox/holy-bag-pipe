@@ -1,6 +1,15 @@
 #include "MyLibraries.h"
 
-// does not keep previous en passant and previous stable pos bools
+
+
+void doMove(chessboard& BOARD, MOVE& move, bool White) {
+    //void temps
+    int a, b;
+    bool c;
+
+    doMove(BOARD, move, White, a, c, b);
+}
+
 
 void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
     BOARD.hash ^= BLACKHASH;
@@ -121,82 +130,6 @@ void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool&
         else if (prom_to == r)move.to += 24;
     }
 }
-void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
-    BOARD.hash ^= BLACKHASH;
-    capturedPiece = -1;
-    int prom_to = 0;
-    if (move.to > 63) {
-        if (move.to < 72)prom_to = q;
-        else if (move.to < 80)prom_to = n;
-        else if (move.to < 88)prom_to = b;
-        else prom_to = r;
-        if (White) {
-            move.to = move.to % 8 + 56;
-        }
-        else {
-            move.to = move.to % 8;
-        }
-    }
-
-    if (get_bit(get_occupancy(getColour(BOARD, !White)), move.to) != 0) {
-        capturedPiece = get_piece_value(getColour(BOARD, White), move.to);
-        hash_delete_piece(move.to, !White, BOARD);
-    }
-    if (get_bit(getPawn(BOARD, White), move.from) != 0) {
-        if (BOARD.en_passant == move.to && move.to != 0) {
-            if (White) {
-                hash_delete_piece(move.to - 8, !White, BOARD);
-            }
-            else {
-                hash_delete_piece(move.to + 8, !White, BOARD);
-            }
-            hash_move_piece(move, White, BOARD);
-        }
-        else if ((White && move.from > a6) || (!White && move.from < h3)) {
-            hash_delete_piece(move.from, White, BOARD);
-            hash_summon_piece(move.from, White, BOARD, prom_to);
-            hash_move_piece(move, White, BOARD, prom_to);
-        }
-        /*else if ((White && move.from < h3 && move.to > a3) || (!White && move.from > a6 && move.to < h6)) {
-            hash_move_piece(move, White, BOARD);
-        }*/
-        else {
-            hash_move_piece(move, White, BOARD);
-        }
-    }
-    else if (get_bit(getKing(BOARD, White), move.from) != 0) {
-        if (move.from - move.to == 2 || move.from - move.to == -2) {
-            int BlackSide = 0;
-            if (!White) BlackSide = 56;
-            if (move.to == g1 + BlackSide) {
-                hash_delete_piece(h1 + BlackSide, White, BOARD);
-                hash_summon_piece(f1 + BlackSide, White, BOARD, r);
-                hash_move_piece(move, White, BOARD);
-            }
-            else if (move.to == c1 + BlackSide) {
-                hash_delete_piece(a1 + BlackSide, White, BOARD);
-                hash_summon_piece(d1 + BlackSide, White, BOARD, r);
-                hash_move_piece(move, White, BOARD);
-            }
-        }
-        else {
-            hash_move_piece(move, White, BOARD);
-        }
-    }
-    else if (get_bit(getRook(BOARD, White), move.from) != 0) {
-        hash_move_piece(move, White, BOARD);
-    }
-    else {
-        hash_move_piece(move, White, BOARD);
-    }
-
-    if (prom_to != 0) {
-        move.to = 64 + move.to % 8;
-        if (prom_to == n)move.to += 8;
-        else if (prom_to == b)move.to += 16;
-        else if (prom_to == r)move.to += 24;
-    }
-}
 void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
     BOARD.hash ^= BLACKHASH;
     int prom_to = 0;
@@ -291,6 +224,84 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
     if (capturedPiece != -1) {
         hash_summon_piece(move.to, !White, BOARD, capturedPiece);
         restore_opponents_piece(BOARD, move.to, White, capturedPiece);
+    }
+
+    if (prom_to != 0) {
+        move.to = 64 + move.to % 8;
+        if (prom_to == n)move.to += 8;
+        else if (prom_to == b)move.to += 16;
+        else if (prom_to == r)move.to += 24;
+    }
+}
+
+
+void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool& enPassant, int& tempCastling) {
+    BOARD.hash ^= BLACKHASH;
+    capturedPiece = -1;
+    int prom_to = 0;
+    if (move.to > 63) {
+        if (move.to < 72)prom_to = q;
+        else if (move.to < 80)prom_to = n;
+        else if (move.to < 88)prom_to = b;
+        else prom_to = r;
+        if (White) {
+            move.to = move.to % 8 + 56;
+        }
+        else {
+            move.to = move.to % 8;
+        }
+    }
+
+    if (get_bit(get_occupancy(getColour(BOARD, !White)), move.to) != 0) {
+        capturedPiece = get_piece_value(getColour(BOARD, White), move.to);
+        hash_delete_piece(move.to, !White, BOARD);
+    }
+    if (get_bit(getPawn(BOARD, White), move.from) != 0) {
+        if (BOARD.en_passant == move.to && move.to != 0) {
+            if (White) {
+                hash_delete_piece(move.to - 8, !White, BOARD);
+            }
+            else {
+                hash_delete_piece(move.to + 8, !White, BOARD);
+            }
+            hash_move_piece(move, White, BOARD);
+        }
+        else if ((White && move.from > a6) || (!White && move.from < h3)) {
+            hash_delete_piece(move.from, White, BOARD);
+            hash_summon_piece(move.from, White, BOARD, prom_to);
+            hash_move_piece(move, White, BOARD, prom_to);
+        }
+        /*else if ((White && move.from < h3 && move.to > a3) || (!White && move.from > a6 && move.to < h6)) {
+            hash_move_piece(move, White, BOARD);
+        }*/
+        else {
+            hash_move_piece(move, White, BOARD);
+        }
+    }
+    else if (get_bit(getKing(BOARD, White), move.from) != 0) {
+        if (move.from - move.to == 2 || move.from - move.to == -2) {
+            int BlackSide = 0;
+            if (!White) BlackSide = 56;
+            if (move.to == g1 + BlackSide) {
+                hash_delete_piece(h1 + BlackSide, White, BOARD);
+                hash_summon_piece(f1 + BlackSide, White, BOARD, r);
+                hash_move_piece(move, White, BOARD);
+            }
+            else if (move.to == c1 + BlackSide) {
+                hash_delete_piece(a1 + BlackSide, White, BOARD);
+                hash_summon_piece(d1 + BlackSide, White, BOARD, r);
+                hash_move_piece(move, White, BOARD);
+            }
+        }
+        else {
+            hash_move_piece(move, White, BOARD);
+        }
+    }
+    else if (get_bit(getRook(BOARD, White), move.from) != 0) {
+        hash_move_piece(move, White, BOARD);
+    }
+    else {
+        hash_move_piece(move, White, BOARD);
     }
 
     if (prom_to != 0) {

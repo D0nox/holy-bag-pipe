@@ -16,8 +16,9 @@ bool has_position_occured_two_times(uint64_t& positionHash) {
     return false;
 }
 
-std::mutex nodeMutex;
-std::mutex MUTEX;
+
+
+
 
 void addFutureMove(int depth, MOVE move) {
     new_best_moves_mtx.lock();
@@ -202,11 +203,31 @@ void sortMoves(MOVES& moves, chessboard& BOARD, bool White, int depth) {
     }
 }
 
+int nullMove(chessboard& BOARD, bool White, int depth, int alpha, int beta) {
+    BOARD.canNullMove = false;
+    int score =  penetration_manager(BOARD, depth - R - 1, White, alpha, beta);
+    BOARD.canNullMove = true;
+    return score;
+}
+
 int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int beta) {
     nodeMutex.lock();
     nodes++;
     nodeMutex.unlock();
     if (depth > 0) {
+        bool ownKingInCheck = king_in_check(BOARD, White);
+
+        /*if (depth == 1 && ownKingInCheck)
+            depth++;*/
+
+        /*if (
+            depth > 2 &&
+            BOARD.canNullMove &&
+            ownKingInCheck &&
+            nullMove(BOARD, White, depth, alpha, beta) >= beta
+            )
+            return beta;*/
+
         MOVES moves;
         
         //chessboard tempB = BOARD;
@@ -231,7 +252,7 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
 
 
         int enpassant_temp = BOARD.en_passant, stable_pos_temp = BOARD.position_is_stable, bababoy;
-        bool enpassant_bool = BOARD.keep_en_passant, tempEnpassant = false, gagagon, ownKingInCheck = king_in_check(BOARD, White);
+        bool enpassant_bool = BOARD.keep_en_passant, tempEnpassant = false, gagagon;
 
         int tempCapture, tempCastling;
 
@@ -252,8 +273,8 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
 
         //if (depth == 1) nodes += moves.Count;
         if (moves.Count == 0) {
-            if (king_in_check(BOARD, White)) {
-                return checkmate + (DEPTH - depth);
+            if (ownKingInCheck) {
+                return checkmate + (currentlyAnalysingDepth - depth);
             }
             else
                 return 0;
@@ -372,6 +393,8 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
 
     nodesQesc = 0;
 
+    R = 3;
+
     //dont analyse if only one move available
     if (FIRST_LAYER_BOARDS.n == 1) {
         std::cout << "\n\nBest move: ";
@@ -390,6 +413,7 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
         MAX_DEPTH = depth;
         for (int depth = STARTING_DEPTH; depth <= MAX_DEPTH; depth++) {
             currentlyAnalysingDepth = depth;
+
             start = std::chrono::high_resolution_clock::now();
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(start_of_all_analysis - start);
 

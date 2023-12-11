@@ -78,7 +78,7 @@ chessboard initialize_chessboard(std::string FenCode, bool& White, int& time) {
         }
         time = stoi(timeString);
     }
-    generate_hash_for_pos(board);
+    generate_hash_for_pos(board, White);
     return board;
 }
 
@@ -596,37 +596,6 @@ uint64_t& moveAnalyseOrder(chessboard& BOARD, bool White, int groupNum) {
     else return getKing(BOARD, White);
 }
 
-void read_precomputed_moves(std::unordered_map<std::string, std::string>& precomputed_moves, std::string file_name) {
-    std::ifstream input_file(file_name);
-    if (input_file.is_open()) {
-        std::string line;
-
-        while (std::getline(input_file, line)) {
-            if (line[0] != '#' && line != "") {
-                std::vector<std::string> split_line = split(line, ';');
-                precomputed_moves[split_line[0]] = split_line[1];
-            }
-        }
-
-        input_file.close();
-    }
-    else {
-        std::cout << "ZE \"" << file_name << "\" FILE is MISSING\n";
-    }
-}
-std::vector<std::string> split(const std::string line, char split_symbol) {
-    int i = 0;
-    std::vector<std::string> words;
-    std::string word = "";
-    while (i != line.length()) {
-        if (line[i] != split_symbol)
-            word += line[i];
-        else if (word != "") { words.push_back(word); word = ""; }
-        i++;
-    }
-    if (word[word.length() - 1] != split_symbol && word != "")words.push_back(word);
-    return words;
-}
 bool are_chessboards_equal(chessboard& a, chessboard& b) {
     return a.white.bishops == b.white.bishops && a.white.pawns == b.white.pawns && a.white.knights == b.white.knights && a.white.king == b.white.king &&
         a.white.queen == b.white.queen && a.white.rooks == b.white.rooks && a.castling == b.castling &&

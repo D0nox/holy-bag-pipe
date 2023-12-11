@@ -7,6 +7,7 @@
 #include "ZobristHashing.h"
 #include "MoveGenConst.h"
 #include "DebugFunctions.h"
+#include "BookReadingFunctions.h"
 
 void startMainProgram() {
     bool white = true;
@@ -32,7 +33,9 @@ int main()
     
     generate_hashes_for_board_hashing();
 
-    startMainProgram();
+    //readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
+
+    //startMainProgram();
 
 
     #pragma region ALotOfPerftTests

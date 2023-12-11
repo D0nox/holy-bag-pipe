@@ -3,10 +3,7 @@
 chessboard initialize_chessboard(std::string FenCode, bool& White, int& time);
 bool are_chessboards_equal(chessboard& a, chessboard& b);
 
-std::vector<std::string> split(const std::string line, char split_symbol);
 
-bool MOVES_EMPTY(MOVES& moves);
-int MOVE_COUNT(MOVES& moves);
 
 void move_piece(bitboards& a, MOVE& move);
 
@@ -34,7 +31,6 @@ uint64_t get_rook_attacks(int square, uint64_t occupancy);
 unsigned int find_first_set_bit(uint64_t& x);
 int Count_bits(uint64_t bitboard);
 
-void read_precomputed_moves(std::unordered_map<std::string, std::string>& precomputed_moves, std::string file_name);
 void init_sliders_attacks(int is_bishop);
 
 bool has_position_occured_two_times(uint64_t& positionHash);

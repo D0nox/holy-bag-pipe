@@ -24,12 +24,17 @@ extern std::unordered_map<uint64_t, int> HASHES_AND_EVALS;
 
 extern uint64_t BOARD_HASHES[2][6][64];
 extern uint64_t CASTLINGHASH[16];
-extern uint64_t PIECEHASH[6][64];
+extern uint64_t PIECEHASH[2][6][64];
 extern uint64_t BLACKHASH;
 extern uint64_t ENPASSANTHASH[8];
 
 
+extern int R;
+
 const int DEPTH = 8;
+
+
+
 
 
 const int futilityMargin[2] = {300, 870};

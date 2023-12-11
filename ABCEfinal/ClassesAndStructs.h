@@ -23,6 +23,7 @@ struct chessboard
     int en_passant = 0;//where en passant located
     bool keep_en_passant = 0;//keep en passant for 1 move
     bool position_is_stable = 1;
+    bool canNullMove = 1;
     uint64_t hash = 0;
 };
 struct cheese_boards {

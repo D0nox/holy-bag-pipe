@@ -20,6 +20,11 @@ const std::string line = "------------------------------------------------------
 int moveCount = 0, My_analysed_moves = 0;
 
 
+int R;
+
+std::mutex nodeMutex;
+std::mutex MUTEX;
+
 
 long long int nodes = 0, nodesQesc = 0;
 long long int REALtotal_nodes = 0;

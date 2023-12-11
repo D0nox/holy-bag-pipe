@@ -149,6 +149,7 @@
       <UseUnicodeForAssemblerListing Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </UseUnicodeForAssemblerListing>
     </ClCompile>
+    <ClCompile Include="BookReadingFunctions.cpp" />
     <ClCompile Include="ClientConnectionToServer.cpp" />
     <ClCompile Include="DebugFuntions.cpp" />
     <ClCompile Include="EvalFunctions.cpp" />
@@ -159,8 +160,10 @@
     <ClCompile Include="ZobristHashing.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BookReadingFunctions.h" />
     <ClInclude Include="ClassesAndStructs.h" />
     <ClInclude Include="ClientConnectionToServer.h" />
+    <ClInclude Include="DebugConstants.h" />
     <ClInclude Include="DebugFunctions.h" />
     <ClInclude Include="EvalConstants.h" />
     <ClInclude Include="EvalFuntions.h" />

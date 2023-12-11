@@ -1,6 +1,7 @@
 #pragma once
 
 const std::string PrecomputedMovePath = "move_file12.txt";
+const std::string pgnBookPath1 = "book.pgn";
 
 const uint64_t knight_magics[64] = {
     0x20400ULL,
@@ -307,6 +308,7 @@ const uint64_t bishop_magics[64] = {
 const int BOARD_WIDTH = 8;
 const int BOARD_HEIGHT = 8;
 
+
 const uint64_t EMPTY = 0;
 const uint64_t PAWNS = 0xFF00;
 const uint64_t KNIGHTS = 0x42;
@@ -316,17 +318,22 @@ const uint64_t QUEEN = 0x10;
 const uint64_t ROOKS = 0x81;
 const int CASTLING = 0xF;
 const int EN_PASSANT = 0;
+
+const uint64_t LINE_AT_THE_BOTTOM = 0xFF;
 const uint64_t trim_left = 0x8080808080808080;
 const uint64_t trim_right = 0x101010101010101;
+
 const int both_king_locations = e1 * 100 + e8;
 const int max_saved_board_n = 90;
 
-const enum moveTypes{normal, capture, promotion};//move types
+const enum moveTypes{normal, capture, promotion};
 
 
 const enum EvalValues{infinity = 100000, checkmate = -99999};
 
 
+
+const std::string defaultBOARDPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 
 
