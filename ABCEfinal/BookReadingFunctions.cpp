@@ -50,7 +50,7 @@ std::string merge(std::vector<std::string>& splitVector, std::string splitSimbol
 
 std::string pickAMove(std::string moves) {
     std::vector<std::string> spit = split(moves, '|');
-    return split[std::floor(std::rand() * spit.size())];
+    return spit[std::floor(std::rand() * spit.size())];
 }
 
 void veirdMoveToNotVeirdMove(chessboard& BOARD, MOVE& moveOut, std::string veirdMove, bool white) {
