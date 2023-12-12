@@ -46,24 +46,28 @@ void hash_move_piece(MOVE& move, bool white, chessboard& board) {
 void hash_move_piece(MOVE& move, bool white, chessboard& board, int pieceValue) {
     board.hash ^= PIECEHASH[white][pieceValue][move.from];
     board.hash ^= PIECEHASH[white][pieceValue][move.to];
-
 }
 void generate_hash_for_pos(chessboard& board, bool white) {
     if (!white) board.hash = BLACKHASH;
 
     uint64_t temp_occ = get_occupancy(board.white);
     int square;
+
     while (temp_occ != 0) {
         square = find_first_set_bit(temp_occ);
         pop_bit(temp_occ, square);
-        board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, true), square)][square];
+        board.hash ^= PIECEHASH[true][get_piece_value(getColour(board, true), square)][square];
     }
     temp_occ = get_occupancy(board.black);
     while (temp_occ != 0) {
         square = find_first_set_bit(temp_occ);
         pop_bit(temp_occ, square);
-        board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, false), square)][square];
+        board.hash ^= PIECEHASH[false][get_piece_value(getColour(board, false), square)][square];
     }
+
+    if (board.castling != 0)board.hash ^= CASTLINGHASH[board.castling];
+
+    if (board.en_passant != 0)board.hash ^= ENPASSANTHASH[board.en_passant % 8];
 }
 void hash_delete_piece(int square, bool white, chessboard& board) {
     board.hash ^= PIECEHASH[white][get_piece_value(getColour(board, white), square)][square];

@@ -76,6 +76,9 @@ void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool&
         else
             BOARD.castling &= 12;
 
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         if (move.from - move.to == 2 || move.from - move.to == -2) {
             int BlackSide = 0;
             if (!White) BlackSide = 56;
@@ -115,6 +118,10 @@ void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool&
             else if ((BOARD.castling & 2) != 0 && move.from == a8)
                 BOARD.castling &= 13;
         }
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         hash_move_piece(move, White, BOARD);
         move_piece(getColour(BOARD, White), move);
     }
@@ -200,6 +207,10 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
             hash_move_piece(reversed_move, White, BOARD);
             move_piece(getColour(BOARD, White), reversed_move);
         }
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         BOARD.castling = tempCastling;
     }
     else if (prom_to != 0) {
@@ -213,6 +224,10 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
     else if (get_bit(getRook(BOARD, White), move.to) != 0) {
         hash_move_piece(reversed_move, White, BOARD);
         move_piece(getColour(BOARD, White), reversed_move);
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         BOARD.castling = tempCastling;
     }
     else {
@@ -279,6 +294,15 @@ void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, b
         }
     }
     else if (get_bit(getKing(BOARD, White), move.from) != 0) {
+        tempCastling = BOARD.castling;
+        if (White)
+            BOARD.castling &= 3;
+        else
+            BOARD.castling &= 12;
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         if (move.from - move.to == 2 || move.from - move.to == -2) {
             int BlackSide = 0;
             if (!White) BlackSide = 56;
@@ -298,6 +322,23 @@ void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, b
         }
     }
     else if (get_bit(getRook(BOARD, White), move.from) != 0) {
+        tempCastling = BOARD.castling;
+        if (White) {
+            if ((BOARD.castling & 4) != 0 && move.from == h1)
+                BOARD.castling &= 11;
+            else if ((BOARD.castling & 8) != 0 && move.from == a1)
+                BOARD.castling &= 7;
+        }
+        else {
+            if ((BOARD.castling & 1) != 0 && move.from == h8)
+                BOARD.castling &= 14;
+            else if ((BOARD.castling & 2) != 0 && move.from == a8)
+                BOARD.castling &= 13;
+        }
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
         hash_move_piece(move, White, BOARD);
     }
     else {
@@ -366,6 +407,11 @@ void undoMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece,
         else {
             hash_move_piece(reversed_move, White, BOARD, k);
         }
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
+        BOARD.castling = tempCastling;
     }
     else if (prom_to != 0) {
         hash_move_piece(reversed_move, White, BOARD, prom_to);
@@ -374,6 +420,11 @@ void undoMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece,
     }
     else if (get_bit(getRook(BOARD, White), move.from) != 0) {
         hash_move_piece(reversed_move, White, BOARD, r);
+
+        BOARD.hash ^= CASTLINGHASH[tempCastling];
+        BOARD.hash ^= CASTLINGHASH[BOARD.castling];
+
+        BOARD.castling = tempCastling;
     }
     else {
         hash_move_piece(reversed_move, White, BOARD, get_piece_value(getColour(BOARD, White), move.from));

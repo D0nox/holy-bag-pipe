@@ -313,7 +313,6 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
 
 
                     if (score >= beta) {
-                        BOARD.position_is_stable = stable_pos_temp;
                         BOARD.keep_en_passant = enpassant_bool;
                         BOARD.en_passant = enpassant_temp;
                         return beta;
@@ -324,7 +323,6 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
 
             /*if(depth > 2)
                 HASHES_AND_EVALS[BOARD.hash] = alpha;*/
-            BOARD.position_is_stable = stable_pos_temp;
             BOARD.keep_en_passant = enpassant_bool;
             BOARD.en_passant = enpassant_temp;
             return alpha;
@@ -357,8 +355,8 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
     MOVES generated_moves;
     std::string colour;
 
-
     cheese_boards FIRST_LAYER_BOARDS;
+    
 
     std::vector<std::thread> threads;
     std::vector<std::future<int>> futures;

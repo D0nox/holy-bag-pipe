@@ -33,7 +33,7 @@ int main()
     
     generate_hashes_for_board_hashing();
 
-    //readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
+    readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
 
     //startMainProgram();
 

@@ -48,6 +48,11 @@ std::string merge(std::vector<std::string>& splitVector, std::string splitSimbol
     return edited;
 }
 
+std::string pickAMove(std::string moves) {
+    std::vector<std::string> spit = split(moves, '|');
+    return split[std::floor(std::rand() * spit.size())];
+}
+
 void veirdMoveToNotVeirdMove(chessboard& BOARD, MOVE& moveOut, std::string veirdMove, bool white) {
     veirdMove.erase(std::remove(veirdMove.begin(), veirdMove.end(), '+'), veirdMove.end());
 
@@ -199,7 +204,24 @@ void writeHashMovesToFile(std::string filePath, std::unordered_map<uint64_t, std
         outFile.close();
     }
 }
+void readHashMovesToUMap(std::string filePath, std::unordered_map<uint64_t, std::string>& precomputedMovesH) {
+    std::ifstream input_file(filePath);
+    if (input_file.is_open()) {
+        std::string line;
 
+        while (std::getline(input_file, line)) {
+            if (line[0] != '#' && line != "") {
+                std::vector<std::string> split_line = split(line, ';');
+                precomputedMovesH[stoull(split_line[0])] = split_line[1];
+            }
+        }
+        std::cout << "Finished reading hash moves at \"" << filePath << "\"\n";
+        input_file.close();
+    }
+    else {
+        std::cout << "ZE \"" << filePath << "\" FILE is MISSING\n";
+    }
+}
 
 void readABook(std::string readPathPgn, std::string writePathTxt) {
     std::unordered_map<uint64_t, std::string> precomputedMovesH;
