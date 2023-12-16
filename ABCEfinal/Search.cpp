@@ -257,8 +257,10 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
         int tempCapture, tempCastling;
 
 
-        if (BOARD.keep_en_passant)
+        if (BOARD.keep_en_passant) {
             BOARD.keep_en_passant = false;
+
+        }
         else
             BOARD.en_passant = 0;
 
@@ -292,7 +294,7 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
                         BOARD.position_is_stable = false;
                     }
                     if (depth <= 2) {
-                        if ((!ownKingInCheck || tempCapture == -1 || !king_in_check(BOARD, !White)) && posEval < alpha - futilityMargin[depth - 1])
+                        if (!ownKingInCheck && tempCapture == -1 && !king_in_check(BOARD, !White) && posEval < alpha - futilityMargin[depth - 1])
                             score = posEval;
                         else
                             score = -penetration_manager(BOARD, depth - 1, !White, -beta, -alpha);;

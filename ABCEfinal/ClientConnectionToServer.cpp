@@ -7,7 +7,7 @@
 #define _OPEN_SYS_SOCK_IPV6
 
 
-void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomputed_moves) {
+void DoTheThing(bool White, std::unordered_map<uint64_t, std::string> precomputed_moves) {
     WSADATA wsa_data;
     SOCKADDR_IN addr;
 
@@ -49,16 +49,14 @@ void DoTheThing(bool White, std::unordered_map<std::string, std::string> precomp
                 return;
         }
         else if (moveCount < 18 && !precomputed_moves.empty()) {
-            std::vector<std::string> split_fen = split(message, ' ');
-            std::string cut_fen = split_fen[0] + ' ' + split_fen[1] + ' ' + split_fen[2] + ' ' + split_fen[3];
-            auto location = precomputed_moves.find(cut_fen);
+            chessboard BOARD = initialize_chessboard(message, White, time);
+            auto location = precomputed_moves.find(BOARD.hash);
             if (location != precomputed_moves.end()) {
                 std::cout << line << "\n";
-                best_move = location->second;
-                std::cout << "Precomputed move: \n" << best_move << "\n\n";
+                best_move = pickAMove(location->second);
+                std::cout << "Book move: \n" << best_move << "\n\n";
             }
             else {
-                chessboard BOARD = initialize_chessboard(message, White, time);
                 iterativeDepthAnalysis(BOARD, White, DEPTH, best_move, time);
                 My_analysed_moves++;
             }

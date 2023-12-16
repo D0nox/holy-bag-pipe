@@ -21,9 +21,11 @@ void startMainProgram() {
         std::cout << colour << " aint a colour";
         return;
     }*/
-    std::unordered_map<std::string, std::string> precomputed_moves;
-    read_precomputed_moves(precomputed_moves, PrecomputedMovePath);
 
+    std::unordered_map<uint64_t, std::string> precomputed_moves;
+
+    //read_precomputed_moves(precomputed_moves, PrecomputedMovePath);
+    readHashMovesToUMap(HASHBOOKPATH1, precomputed_moves);
     DoTheThing(white, precomputed_moves);
 }
 int main()
@@ -33,9 +35,10 @@ int main()
     
     generate_hashes_for_board_hashing();
 
-    readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
+    //readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
+    
 
-    //startMainProgram();
+    startMainProgram();
 
 
     #pragma region ALotOfPerftTests

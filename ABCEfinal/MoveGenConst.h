@@ -2,6 +2,7 @@
 
 const std::string PrecomputedMovePath = "move_file12.txt";
 const std::string pgnBookPath1 = "book.pgn";
+const std::string HASHBOOKPATH1 = "bOOKoFtHEaLIVE.txt";
 
 const uint64_t knight_magics[64] = {
     0x20400ULL,

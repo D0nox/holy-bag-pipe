@@ -57,6 +57,7 @@ void doMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, bool&
         }
         else if ((White && move.from < h3 && move.to > a3) || (!White && move.from > a6 && move.to < h6)) {
             BOARD.keep_en_passant = true;
+            BOARD.hash ^= ENPASSANTHASH[move.to % 8];
             if (White)
                 BOARD.en_passant = move.from + 8;
             else
@@ -168,12 +169,12 @@ void undoMove(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, boo
                 hash_summon_piece(move.to - 8, !White, BOARD, p);
                 set_bit(getPawn(BOARD, !White), move.to - 8);
             }
-            else
-            {
+            else{
                 hash_summon_piece(move.to + 8, !White, BOARD, p);
                 set_bit(getPawn(BOARD, !White), move.to + 8);
             }
             BOARD.en_passant = move.to;
+            BOARD.hash ^= ENPASSANTHASH[move.to % 8];
         }
         else {
             //BOARD.en_passant = 0;
@@ -273,6 +274,7 @@ void doMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece, b
     }
     if (get_bit(getPawn(BOARD, White), move.from) != 0) {
         if (BOARD.en_passant == move.to && move.to != 0) {
+            BOARD.hash ^= ENPASSANTHASH[move.to % 8];
             if (White) {
                 hash_delete_piece(move.to - 8, !White, BOARD);
             }
@@ -376,6 +378,7 @@ void undoMoveHash(chessboard& BOARD, MOVE& move, bool White, int& capturedPiece,
 
     if (get_bit(getPawn(BOARD, White), move.from) != 0) {
         if (enPassant) {
+            BOARD.hash ^= ENPASSANTHASH[move.to % 8];
             hash_move_piece(reversed_move, White, BOARD, p);
             if (White) {
                 hash_summon_piece(move.to - 8, !White, BOARD, p);

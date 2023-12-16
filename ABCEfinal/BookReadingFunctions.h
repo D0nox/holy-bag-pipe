@@ -1,6 +1,9 @@
 #pragma once
 std::vector<std::string> split(const std::string line, char split_symbol);
 void read_precomputed_moves(std::unordered_map<std::string, std::string>& precomputed_moves, std::string file_name);
+void readHashMovesToUMap(std::string filePath, std::unordered_map<uint64_t, std::string>& precomputedMovesH);
+std::string pickAMove(std::string moves);
+
 
 //STANDART NOTATION TO MY NOTATION (only usable in oppenings so far)
 void veirdMoveToNotVeirdMove(chessboard& BOARD, MOVE& moveOut, std::string veirdMove, bool white);

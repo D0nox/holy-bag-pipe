@@ -50,7 +50,8 @@ std::string merge(std::vector<std::string>& splitVector, std::string splitSimbol
 
 std::string pickAMove(std::string moves) {
     std::vector<std::string> spit = split(moves, '|');
-    return spit[std::floor(std::rand() * spit.size())];
+    int nr = std::floor((double)std::rand() / RAND_MAX * spit.size());
+    return spit[nr];
 }
 
 void veirdMoveToNotVeirdMove(chessboard& BOARD, MOVE& moveOut, std::string veirdMove, bool white) {
@@ -215,7 +216,7 @@ void readHashMovesToUMap(std::string filePath, std::unordered_map<uint64_t, std:
                 precomputedMovesH[stoull(split_line[0])] = split_line[1];
             }
         }
-        std::cout << "Finished reading hash moves at \"" << filePath << "\"\n";
+        std::cout << "Read hash moves at \"" << filePath << "\", total "<<precomputedMovesH.size()<<" positions\n";
         input_file.close();
     }
     else {

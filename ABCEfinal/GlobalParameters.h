@@ -31,7 +31,7 @@ extern uint64_t ENPASSANTHASH[8];
 
 extern int R;
 
-const int DEPTH = 8;
+const int DEPTH = 7;
 
 
 
