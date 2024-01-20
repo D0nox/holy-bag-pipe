@@ -33,11 +33,11 @@ extern int R;
 
 const int DEPTH = 7;
 
+const bool printColours = false;
 
 
 
-
-const int futilityMargin[2] = {300, 870};
+const int futilityMargin[2] = {3000, 5000};
 
 
 // Best move sequence

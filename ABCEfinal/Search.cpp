@@ -26,7 +26,7 @@ void addFutureMove(int depth, MOVE move) {
     new_best_moves_mtx.unlock();
 }
 
-void sort_positions(cheese_boards& BOARDS, bool white) {
+void sort_positions(cheese_boards& BOARDS) {
     chessboard temp_board;
     int temp_eval, tempI;
     MOVE temp_move;
@@ -34,17 +34,9 @@ void sort_positions(cheese_boards& BOARDS, bool white) {
         tempI = i;
         temp_eval = BOARDS.eval[i];
         for (int j = i + 1; j < BOARDS.n; j++) {
-            if (white) {
-                if (BOARDS.eval[j] > temp_eval) {
-                    tempI = j;
-                    temp_eval = BOARDS.eval[j];
-                }
-            }
-            else {
-                if (BOARDS.eval[j] < temp_eval) {
-                    tempI = j;
-                    temp_eval = BOARDS.eval[j];
-                }
+            if (BOARDS.eval[j] > temp_eval) {
+                tempI = j;
+                temp_eval = BOARDS.eval[j];
             }
         }
         if (tempI != i) {
@@ -334,7 +326,7 @@ int penetration_manager(chessboard& BOARD, int depth, bool White, int alpha, int
         if (!BOARD.position_is_stable)
             return quiescenceSearch(BOARD, depth, White, alpha, beta);
 
-        else return EVAL(BOARD, depth, White);
+        else return EVAL(BOARD, depth, White, alpha, beta);
     }
 }
 
@@ -356,6 +348,8 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
     int alpha = -100000, beta = 100000, Eval = -100000;
     MOVES generated_moves;
     std::string colour;
+    int whiteMultiplier = 1;
+    if (!White)whiteMultiplier = -1;
 
     cheese_boards FIRST_LAYER_BOARDS;
     
@@ -387,7 +381,7 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
     std::cout << "\nEvaluating the position:\n";
     std::cout << "depth      nodes       time        speed      |    eval    | moves\n";
 
-    sort_positions(FIRST_LAYER_BOARDS, White);
+    sort_positions(FIRST_LAYER_BOARDS);
     futureMoves[0] = FIRST_LAYER_BOARDS.moves[0];
     print_stats(1, (duration.count() * 1.0), FIRST_LAYER_BOARDS.n, FIRST_LAYER_BOARDS.eval[0], White, FIRST_LAYER_BOARDS);
 
@@ -464,13 +458,13 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
             duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             time = duration.count() * 1.0;
 
-            sort_positions(FIRST_LAYER_BOARDS, White);
+            sort_positions(FIRST_LAYER_BOARDS);
 
             futureMoves[0] = FIRST_LAYER_BOARDS.moves[0];
 
             print_stats(depth, time, nodes, FIRST_LAYER_BOARDS.eval[0], White, FIRST_LAYER_BOARDS);
 
-            //if(depth >= 7 && nodes < 10000000)MAX_DEPTH++;
+            if(depth >= DEPTH && nodes < 1000000)MAX_DEPTH++;
 
             total_nodes += nodes;
             REALtotal_nodes += nodes;
@@ -515,14 +509,12 @@ void iterativeDepthAnalysis(chessboard& BOARD, bool White, int depth, std::strin
             eval = FIRST_LAYER_BOARDS.eval[1];
             check_for_three_fold_repetition.push_back(FIRST_LAYER_BOARDS.board[1].hash);
         }
-        if (eval < -100 || eval > 100) {
-            if (White)
+        if (printColours && (eval < -100 || eval > 100)) {
                 colour = (eval < 0 ? "\033[1;31m" : "\033[1;32m");
-            else
-                colour = (eval > 0 ? "\033[1;31m" : "\033[1;32m");
         }
+        else colour = "";
 
-        std::cout << move_out << "\nEval: " << colour << change_eval_to_readable(eval, cutOffDepth) << "\033[0m\n\n" << line;
+        std::cout << move_out << "\nEval: " << colour << change_eval_to_readable(whiteMultiplier * eval, cutOffDepth) << (printColours ? "\033[0m" : "") << "\n\n" << line;
         std::cout << " Total nodes generated: " << total_nodes << "\n" << line << "\n\n\n\n";
         FIRST_LAYER_BOARDS.n = 0;
     }

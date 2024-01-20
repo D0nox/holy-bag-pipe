@@ -38,7 +38,7 @@ void DoTheThing(bool White, std::unordered_map<uint64_t, std::string> precompute
             if (My_analysed_moves != 0)
                 std::cout << "STATS\n" <<
                 "anal. speed -  " << std::fixed << std::setprecision(2) << (REALtotal_nodes / REALtotal_time / 1000000.0) << "mN/s\n"
-                "total nodes - " << std::fixed << std::setprecision(1) << (REALtotal_nodes / 1000000) << " MN\n" <<
+                "total nodes - " << std::fixed << std::setprecision(1) << (REALtotal_nodes / 1000000) << " mN\n" <<
                 "avrg. position anal. speed - " << std::fixed << std::setprecision(1) << (REALtotal_time / My_analysed_moves * 1.0) << " s\n";
             std::cin >> eh;
             if (eh == "yes") {

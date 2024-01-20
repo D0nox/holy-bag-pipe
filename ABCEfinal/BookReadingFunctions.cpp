@@ -50,6 +50,7 @@ std::string merge(std::vector<std::string>& splitVector, std::string splitSimbol
 
 std::string pickAMove(std::string moves) {
     std::vector<std::string> spit = split(moves, '|');
+    srand(time(0));
     int nr = std::floor((double)std::rand() / RAND_MAX * spit.size());
     return spit[nr];
 }
@@ -160,7 +161,7 @@ void parseSortOfPgnFileToHashesBook(std::string filePath, std::unordered_map<uin
         while (std::getline(inputFile, line)) {
             g++;
             if (line[0] != '#' && line != "") {
-                chessboard BOARD = initialize_chessboard(defaultBOARDPosition, white, dontCare);
+                chessboard BOARD = initialize_chessboard(POSstarting, white, dontCare);
                 std::vector<std::string> split_line = split(line, '.');
                 split_line.erase(split_line.begin());
                 for (int i = 0; i < split_line.size(); i++) {
@@ -228,5 +229,6 @@ void readABook(std::string readPathPgn, std::string writePathTxt) {
     std::unordered_map<uint64_t, std::string> precomputedMovesH;
 
     parseSortOfPgnFileToHashesBook(readPathPgn, precomputedMovesH);
-    writeHashMovesToFile(writePathTxt, precomputedMovesH);
+    if(!precomputedMovesH.empty())
+        writeHashMovesToFile(writePathTxt, precomputedMovesH);
 }

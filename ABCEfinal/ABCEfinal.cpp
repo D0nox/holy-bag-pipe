@@ -7,6 +7,7 @@
 #include "ZobristHashing.h"
 #include "MoveGenConst.h"
 #include "DebugFunctions.h"
+#include "DebugConstants.h"
 #include "BookReadingFunctions.h"
 
 void startMainProgram() {
@@ -28,17 +29,22 @@ void startMainProgram() {
     readHashMovesToUMap(HASHBOOKPATH1, precomputed_moves);
     DoTheThing(white, precomputed_moves);
 }
-int main()
-{
+void initializeStuff() {
     init_sliders_attacks(rook);
     init_sliders_attacks(bishop);
-    
+
     generate_hashes_for_board_hashing();
+}
+int main()
+{
+    initializeStuff();
 
     //readABook(pgnBookPath1, "bOOKoFtHEaLIVE.txt");
-    
 
     startMainProgram();
+     
+     
+    //testEval(POSkivipepe, LAZYEVAL);
 
 
     #pragma region ALotOfPerftTests
@@ -49,8 +55,8 @@ int main()
 
     #pragma region SinglePerftTests
 
-    //single_perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6);
-    //single_perft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0", 5);
+    //single_perft(POSstarting, 6);
+    //single_perft(POSkivipepe, 5);
     //single_perft("r1b1kb1r/pp2pp1p/n2q1n2/2ppP1p1/2B3P1/2N2N2/PPPP1P1P/R1BQK2R w KQkq - 1 7", 1);
     //single_perft("5k2/7P/3P2P1/2N2K2/8/8/PP6/8 w - - 1 68", 1);
     //single_perft("8/2r3p1/p2p4/N2k2p1/8/2P4P/PP4P1/4R1K1 w - - 11 39", 2);

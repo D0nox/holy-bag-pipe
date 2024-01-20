@@ -2,86 +2,82 @@
 
 int get_attacked_pieces_value(chessboard& BOARD, uint64_t& attacked, bool white_attacking) {
     int temp_nr, return_value = 0;
-    if (white_attacking) {
-        while (attacked != 0) {
-            temp_nr = find_first_set_bit(attacked);
-            if (get_bit(BOARD.black.bishops, temp_nr) != 0) return_value += 30;
-            else if (get_bit(BOARD.black.pawns, temp_nr) != 0) return_value += 10;
-            else if (get_bit(BOARD.black.knights, temp_nr) != 0) return_value += 30;
-            else if (get_bit(BOARD.black.queen, temp_nr) != 0) return_value += 90;
-            else if (get_bit(BOARD.black.rooks, temp_nr) != 0) return_value += 45;
-            pop_bit(attacked, temp_nr);
-        }
-    }
-    else {
-        while (attacked != 0) {
-            temp_nr = find_first_set_bit(attacked);
-            if (get_bit(BOARD.white.bishops, temp_nr) != 0) return_value += 30;
-            else if (get_bit(BOARD.white.pawns, temp_nr) != 0) return_value += 10;
-            else if (get_bit(BOARD.white.knights, temp_nr) != 0) return_value += 30;
-            else if (get_bit(BOARD.white.queen, temp_nr) != 0) return_value += 90;
-            else if (get_bit(BOARD.white.rooks, temp_nr) != 0) return_value += 45;
-            pop_bit(attacked, temp_nr);
-        }
+    while (attacked != 0) {
+        temp_nr = find_first_set_bit(attacked);
+        if (get_bit(getBishop(BOARD, !white_attacking), temp_nr) != 0) return_value += 300;
+        else if (get_bit(getPawn(BOARD, !white_attacking), temp_nr) != 0) return_value += 100;
+        else if (get_bit(getKnight(BOARD, !white_attacking), temp_nr) != 0) return_value += 300;
+        else if (get_bit(getQueen(BOARD, !white_attacking), temp_nr) != 0) return_value += 900;
+        else if (get_bit(getRook(BOARD, !white_attacking), temp_nr) != 0) return_value += 450;
+        pop_bit(attacked, temp_nr);
     }
     return return_value;
 }
 int get_xray_attacks(chessboard& BOARD, uint64_t& attack_rays, bool white, char piece, int square) {
-    uint64_t all_piece_occupancy = get_occupancy(BOARD), attacked_opponent_pieces;
-    int power = 1, returnvalue = 0;
-    if (white) {
-        while ((attack_rays & all_piece_occupancy) != 0) {
-            if (piece == 'q') {
-                all_piece_occupancy &= ~get_queen_attacks(square, all_piece_occupancy);
-            }
-            else if (piece == 'b') {
-                all_piece_occupancy &= ~get_bishop_attacks(square, all_piece_occupancy);
-            }
-            else if (piece == 'r') {
-                all_piece_occupancy &= ~get_rook_attacks(square, all_piece_occupancy);
-            }
-            attacked_opponent_pieces = get_occupancy(BOARD.black) & get_queen_attacks(square, all_piece_occupancy);
-            returnvalue += get_attacked_pieces_value(BOARD, attacked_opponent_pieces, true) * pow(0.5, power);
-            if ((attacked_opponent_pieces & BOARD.black.king) != 0) returnvalue += 18 * pow(0.5, power);
-            power++;
+    uint64_t all_piece_occupancy = get_occupancy(BOARD), attacked_opponent_pieces, king = getKing(BOARD, !white), opponentsPieces = get_occupancy(getColour(BOARD, !white)), attackTemp;
+    int power = 0, returnvalue = 0;
+    while ((attack_rays & all_piece_occupancy) != 0) {
+        if (piece == 'q') {
+            all_piece_occupancy &= ~get_queen_attacks(square, all_piece_occupancy);
+            attackTemp = get_queen_attacks(square, all_piece_occupancy);
         }
-    }
-    else {
-        while ((attack_rays & all_piece_occupancy) != 0) {
-            if (piece == 'q') {
-                all_piece_occupancy &= ~get_queen_attacks(square, all_piece_occupancy);
-            }
-            else if (piece == 'b') {
-                all_piece_occupancy &= ~get_bishop_attacks(square, all_piece_occupancy);
-            }
-            else if (piece == 'r') {
-                all_piece_occupancy &= ~get_rook_attacks(square, all_piece_occupancy);
-            }
-            attacked_opponent_pieces = get_occupancy(BOARD.white) & get_queen_attacks(square, all_piece_occupancy);
-            returnvalue += get_attacked_pieces_value(BOARD, attacked_opponent_pieces, false) * pow(0.5, power);
-            if ((attacked_opponent_pieces & BOARD.white.king) != 0) returnvalue += 18 * pow(0.5, power);
-            power++;
+        else if (piece == 'b') {
+            all_piece_occupancy &= ~get_bishop_attacks(square, all_piece_occupancy);
+            attackTemp = get_bishop_attacks(square, all_piece_occupancy);
         }
+        else if (piece == 'r') {
+            all_piece_occupancy &= ~get_rook_attacks(square, all_piece_occupancy);
+            attackTemp = get_rook_attacks(square, all_piece_occupancy);
+        }
+        attacked_opponent_pieces = opponentsPieces & attackTemp;
+        returnvalue += get_attacked_pieces_value(BOARD, attacked_opponent_pieces, white) * xrayPower[power];
+        if ((attacked_opponent_pieces & king) != 0) returnvalue += 180 * xrayPower[power];
+        power++;
     }
     return returnvalue;
 }
-int quickEVAL(chessboard& BOARD) {
-    int eval = 0, returnEval = 0;
-    if (BOARD.white.pawns != 0) eval += Count_bits(BOARD.white.pawns) * pawn_value;
-    if (BOARD.white.queen != 0) eval += Count_bits(BOARD.white.queen) * queen_value;
-    if (BOARD.white.rooks != 0) eval += Count_bits(BOARD.white.rooks) * rook_value;
-    if (BOARD.white.knights != 0) eval += Count_bits(BOARD.white.knights) * knight_value;
-    if (BOARD.white.bishops != 0) eval += Count_bits(BOARD.white.bishops) * bishop_value;
+int lazyEVAL(chessboard& BOARD, bool White) {
+    int eval = 0, blackCheck = 1, pos;
+    
+    uint64_t allPieces = get_occupancy(BOARD), shifter = 1, white = get_occupancy(BOARD.white), black = white ^ allPieces,
+        pawns = getPawn(BOARD, true) | getPawn(BOARD, !true),
+        bitops = getBishop(BOARD, true) | getBishop(BOARD, !true),
+        knightsg = getKnight(BOARD, true) | getKnight(BOARD, !true),
+        rokkoosk = getRook(BOARD, true) | getRook(BOARD, !true),
+        wuqiejosd = getQueen(BOARD, true) | getQueen(BOARD, !true),
+        akaignknskng = getKing(BOARD, true) | getKing(BOARD, !true);
+    bool endgame = false, temp = false, temp2 = false;
+    if (
+        (getQueen(BOARD, true) == 0 && getQueen(BOARD, !true) == 0) ||
+        ((temp = (getQueen(BOARD, true) > 0 && Count_bits(getPawn(BOARD, true) <= 1 && getBishop(BOARD, true) == 0 && getKnight(BOARD, true) == 0 && getRook(BOARD, true) == 0)) &&
+        (getQueen(BOARD, !true) == 0 ||
+            (temp2 = (getQueen(BOARD, !true) > 0 && Count_bits(getPawn(BOARD, !true) <= 1 && getBishop(BOARD, !true) == 0 && getKnight(BOARD, !true) == 0 && getRook(BOARD, !true) == 0)))) ||
+            (temp2 && (temp || getQueen(BOARD, true) == 0)))
+    ))
+            endgame = true;
 
-    returnEval += eval;
-    eval = 0;
-
-    if (BOARD.black.pawns != 0) eval += Count_bits(BOARD.black.pawns) * pawn_value;
-    if (BOARD.black.queen != 0) eval += Count_bits(BOARD.black.queen) * queen_value;
-    if (BOARD.black.rooks != 0) eval += Count_bits(BOARD.black.rooks) * rook_value;
-    if (BOARD.black.knights != 0) eval += Count_bits(BOARD.black.knights) * knight_value;
-    if (BOARD.black.bishops != 0) eval += Count_bits(BOARD.black.bishops) * bishop_value;
-    return returnEval - eval;
+    for (int i = 0; i < 64; i++) {
+        if ((allPieces & shifter) != 0) {
+            if ((shifter & white) == 0) { blackCheck = -1; pos = (56 - (i - i % 8)) + i % 8; }
+            else { blackCheck = 1; pos = i;}
+            if ((pawns & shifter) != 0)             eval += blackCheck * (pawn_value + PAWN_VALUE[pos] * 10);
+            else if ((bitops & shifter) != 0)       eval += blackCheck * (bishop_value + BISHOP_VALUE[pos] * 10);
+            else if ((knightsg & shifter) != 0)     eval += blackCheck * (knight_value + KNIGHT_VALUE[pos] * 10);
+            else if ((rokkoosk & shifter) != 0)     eval += blackCheck * (rook_value + ROOK_VALUE[pos] * 10);
+            else if ((wuqiejosd & shifter) != 0)    eval += blackCheck * (queen_value + QUEEN_VALUE[pos] * 10);
+            else if ((akaignknskng & shifter) != 0) endgame ? eval += blackCheck * KING_OG_VALUE[pos] * 10 : eval += blackCheck * KING_EG_VALUE[pos] * 10;
+        }
+        shifter = shifter << 1;
+    }
+    return (white ? eval : -eval);
+}
+int EVAL(chessboard& BOARD, int depth, bool White, int alpha, int beta) {
+    int lazyEvalVal = lazyEVAL(BOARD, White);
+    if (lazyEvalVal - lazyMargin > beta || lazyEvalVal + lazyMargin < alpha) return lazyEvalVal;
+    else return EVAL(BOARD, depth, White);
+}
+int NEW_EVAL(chessboard& BOARD, bool white, int lazyEval) {
+    return 1;
 }
 int EVAL(chessboard& BOARD, int depth, bool White) {
     /*if (hash_eval_exists(BOARD.hash))
@@ -165,10 +161,10 @@ int EVAL(chessboard& BOARD, int depth, bool White) {
             }
             else if (ERoMoE > -1) {
 
-                if ((BOARD.black.pawns & (trim_left >> temp_nr % 8)) == 0) { set_bit(passed_pawns, temp_nr); }
+                if ((BOARD.black.pawns & (trim_right << temp_nr % 8)) == 0) { set_bit(passed_pawns, temp_nr); }
 
                 pop_bit(BOARD.white.pawns, temp_nr);
-                if ((BOARD.white.pawns & (trim_left >> temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
+                if ((BOARD.white.pawns & (trim_right << temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
                 set_bit(BOARD.white.pawns, temp_nr);
 
                 if ((BOARD.white.pawns & get_king_attacks(temp_nr)) == 0) { set_bit(isolated_pawns, temp_nr); }
@@ -374,7 +370,7 @@ int EVAL(chessboard& BOARD, int depth, bool White) {
         temp_something = control & black_occupancy;
         eval += get_attacked_pieces_value(BOARD, temp_something, true);
         temp_something = control & white_occupancy;
-        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, true);
+        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, !true);
         if ((temp_n = Count_bits(~control & white_occupancy)) != 0) {
             if (temp_n < 3)eval += temp_n * -5;
             else eval += temp_n * -7;
@@ -430,10 +426,10 @@ int EVAL(chessboard& BOARD, int depth, bool White) {
             }
             else if (ERoMoE > -1) {
 
-                if ((BOARD.black.pawns & (trim_left >> temp_nr % 8)) == 0) { set_bit(passed_pawns, temp_nr); }
+                if ((BOARD.black.pawns & (trim_right << temp_nr % 8)) == 0) { set_bit(passed_pawns, temp_nr); }
 
                 pop_bit(BOARD.black.pawns, temp_nr);
-                if ((BOARD.black.pawns & (trim_left >> temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
+                if ((BOARD.black.pawns & (trim_right << temp_nr % 8)) != 0) { set_bit(doubled_pawns, temp_nr); }
                 set_bit(BOARD.black.pawns, temp_nr);
 
                 if ((BOARD.black.pawns & get_king_attacks(temp_nr)) == 0) { set_bit(isolated_pawns, temp_nr); }
@@ -640,7 +636,7 @@ int EVAL(chessboard& BOARD, int depth, bool White) {
         temp_something = control & white_occupancy;
         eval += get_attacked_pieces_value(BOARD, temp_something, false);
         temp_something = control & black_occupancy;
-        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, false);
+        eval += 0.5 * get_attacked_pieces_value(BOARD, temp_something, !false);
         if ((temp_n = Count_bits(~control & black_occupancy)) != 0) {
             if (temp_n < 3)eval += temp_n * -5;
             else eval += temp_n * -7;
@@ -662,9 +658,4 @@ int EVAL(chessboard& BOARD, int depth, bool White) {
     if (White)
         return finalEval;
     else return -finalEval;
-}
-
-//no cap
-int moveValue(MOVE& move, bool white, int pieceValue) {
-    return MOVEVALUE[white][pieceValue][move.to] - MOVEVALUE[white][pieceValue][move.from];
 }

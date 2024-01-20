@@ -1,5 +1,26 @@
 ﻿#include "MyLibraries.h"
 
+void testEval(std::string fen, int EvalFunctionType) {
+    bool white;
+    int idc2;
+    int eval;
+    chessboard BOARD = initialize_chessboard(fen, white, idc2);
+    print_board(BOARD);
+    switch (EvalFunctionType)
+    {
+        case LAZYEVAL:
+            eval = lazyEVAL(BOARD, white);
+            break;
+        case FULLEVAL:
+            eval = EVAL(BOARD, 0, white);
+            break;
+        default:
+            std::cout << "Not a valid eval function\n";
+            return;
+    }
+    std::cout << "EVAL: " << change_eval_to_readable(eval, 0);
+}
+
 std::string stringRound(double val, int round_to) {
     std::ostringstream stream;
     stream << std::fixed << std::setprecision(round_to) << val;
@@ -50,8 +71,8 @@ void print_board(chessboard BOARD) {
 std::string change_eval_to_readable(int eval, int depth) {
     std::string evalS;
 
-    if (depth % 2 != 0)depth++;
-    depth /= 2;
+    /*if (depth % 2 != 0)depth++;
+    depth /= 2;*/
     /*if (eval >= 99990 || eval <= -99990)evalS = "M" + std::to_string(depth);
 
     else*/ evalS = stringRound((eval / 1000.0), 2);
@@ -107,10 +128,11 @@ void print_bitboard(uint64_t bitboard)
 }
 void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, cheese_boards& FIRST_LAYER_BOARDS) {
     std::cout << std::setw(3) << std::right << depth << "    ";
-
-    std::string colour;
+    int whiteMultiplier = 1;
+    if (!white)whiteMultiplier = -1;
+    std::string colour = "";
     //std::cout <<"(" << eval << ")";
-    if (eval >= 100 || eval <= -100) {
+    if (printColours && (eval >= 100 || eval <= -100)) {
         if (white)
             colour = (eval < 0 ? "\033[1;31m" : "\033[1;32m");
         else
@@ -130,7 +152,7 @@ void print_stats(int depth, double time, uint64_t nodes, int eval, bool white, c
 
     //cout << eval;
 
-    std::cout << colour << std::setw(7) << std::right << change_eval_to_readable(eval, depth) << "\033[0m    | ";
+    std::cout << colour << std::setw(7) << std::right << change_eval_to_readable(whiteMultiplier * eval, depth) << (printColours ? "\033[0m" : "") << "    | ";
 
     /*for(int i = 0; i < 1 && i < FIRST_LAYER_BOARDS.n; i ++)
         std::cout << change_to_readable_notation(FIRST_LAYER_BOARDS.moves[i], white) << " " << std::setw(6) << std::right << change_eval_to_readable(FIRST_LAYER_BOARDS.eval[i], depth)<< "| ";
